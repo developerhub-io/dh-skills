@@ -5,10 +5,10 @@ metadata:
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub
-  docs page; inserting or formatting a callout, code block, table, image, tabs,
-  accordion, cards, video, badge, icon, or any other Markdoc block or inline tag;
-  or when you need the exact syntax, attributes, defaults, or allowed values for a
-  DeveloperHub Markdoc tag.
+  docs page; writing page frontmatter; inserting or formatting a callout, code
+  block, table, image, tabs, accordion, cards, video, badge, icon, or any other
+  Markdoc block or inline tag; or when you need the exact syntax, attributes,
+  defaults, or allowed values for a DeveloperHub Markdoc tag.
 ---
 
 # Writing DeveloperHub Markdoc
@@ -232,9 +232,39 @@ next save.
 - **`conditional audience="…"` must name a real project audience.** Omit the
   attribute for public / all-audiences content.
 
-## A note on page frontmatter
+## Page frontmatter
 
-When editing a real `.md` file (Git-synced repos), the page may open with a YAML
-`--- … ---` frontmatter block (`title`, `slug`, and similar). **Preserve it** and
-put the Markdoc body after it. This skill covers the body; frontmatter fields are
-project-specific, so mirror the sibling pages in the same folder.
+A page stored as a `.md` file (a Git-synced repo, or an export) opens with a YAML
+`--- … ---` block, then a blank line, then the Markdoc body. The field set is
+**fixed** — the same keys on every page, not project-specific — so keep the block
+intact and edit the values in place; put the Markdoc body after it.
+
+```yaml
+---
+type: page
+title: Getting started
+listed: true
+slug: getting-started
+description:
+index_title: Getting started
+hidden:
+keywords:
+tags:
+---
+```
+
+| Field | Meaning |
+|---|---|
+| `type` | `page` for a content page. An index entry may instead be `category`, `label`, `separator`, or `link`; those carry fewer fields (`category`/`label` → `type` + `title`; `separator` → `type`; `link` → `type` + `title` + `url`). |
+| `title` | The page title (its `#` H1). |
+| `listed` | `true` / `false` — whether the page appears in navigation. Defaults to `true` when omitted. |
+| `slug` | URL slug. For a Git-synced page the file path *is* the slug, so this field is informational; renaming the file is what changes the URL. |
+| `description` | Meta / SEO description. Left empty when unset. |
+| `index_title` | Overrides the title shown in the sidebar / index; falls back to `title`. |
+| `hidden` | `true` / `false` — hide the page from the auto-generated index. Defaults to `false`. |
+| `keywords` | Comma-separated search keywords. |
+| `tags` | Comma-separated page tags. |
+
+**Preserve every key, even when its value is empty** — the format writes them all.
+This skill covers the body; leave the frontmatter block in place and change only the
+values you mean to change.
