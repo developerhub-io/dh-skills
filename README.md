@@ -1,6 +1,6 @@
 # @developerhub/dh-skills
 
-[Agent Skills](https://agent-skills.com) that teach AI coding agents how to author
+Agent Skills that teach AI coding agents how to author
 **[DeveloperHub](https://developerhub.io) Markdoc** — the exact, round-trip-safe
 syntax for every content block.
 
@@ -20,16 +20,19 @@ Detailed per-block reference: [`skills/write-markdoc/references/blocks.md`](skil
 
 ## Install
 
-With the [`skills` CLI](https://github.com/agent-skills/skills):
+Install straight from this repo with the [`skills` CLI](https://www.npmjs.com/package/skills):
 
 ```bash
-npx skills add @developerhub/dh-skills
+npx skills add developerhub-io/dh-skills
 ```
 
-Or drop the `skills/write-markdoc` folder into your agent's skills directory
-(`.claude/skills/`, `.cursor/skills/`, etc.). The `SKILL.md` file follows the
-portable [Agent Skills](https://agent-skills.com) format, so it works across
-Claude Code, Cursor, Codex, and other compatible agents.
+Or copy the `skills/write-markdoc` folder into your agent's skills directory
+(`.claude/skills/`, `.cursor/skills/`, …). `SKILL.md` uses the portable Agent
+Skills format (Markdown with YAML frontmatter), so it works across Claude Code,
+Cursor, Codex, and other compatible agents.
+
+It is also published to npm as `@developerhub/dh-skills`, for anyone who prefers to
+vendor the files as a dependency (`npm install @developerhub/dh-skills`).
 
 ## Contributing
 
