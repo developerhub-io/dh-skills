@@ -1,7 +1,7 @@
 ---
 name: write-markdoc
 metadata:
-  version: "1.0"
+  version: "1.1"
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub
@@ -13,11 +13,11 @@ description: >-
 
 # Writing DeveloperHub Markdoc
 
-DeveloperHub pages are authored in **Markdoc** — a superset of Markdown with a set
+DeveloperHub pages are authored in **Markdoc**, a superset of Markdown with a set
 of typed custom tags. The same format is used when editing a page through the
 editor, an API/AI edit, or a Git-synced repository: what you write is parsed into
 the editor's document model, and what the editor produces is serialised back to
-this exact syntax. Getting the shape right keeps that round-trip **lossless** —
+this exact syntax. Getting the shape right keeps that round-trip **lossless**:
 emit a non-canonical shape and the edit churns on the first save or silently drops
 content.
 
@@ -51,7 +51,7 @@ These hold for every tag. Break one and the round-trip breaks.
    A text-less link round-trips to nothing.
 7. **Asset references stay verbatim.** An image `url="asset:zvlxyph4f37t"` is kept
    as-is; never resolve it to a URL. (Full `https://uploads.developerhub.io/…`
-   URLs are also valid — use whichever the surrounding pages use.)
+   URLs are also valid; use whichever the surrounding pages use.)
 8. **Reserve `#` (H1) for the page title.** Body headings start at `##`.
 
 ## Standard Markdown
@@ -60,16 +60,17 @@ Plain Markdown works and is preferred wherever a custom tag is not needed:
 
 - Headings `##` … `######`
 - `**bold**`, `*italic*`, `~~strikethrough~~`, `` `inline code` ``
-- `[links](/support-center/slug)` — root-relative for internal links
+- `[links](/support-center/slug)`: root-relative for internal links
 - Bullet (`-`) and ordered (`1.`) lists, including nested
 - `> blockquote`
 - `---` horizontal rule
+- A trailing `\` at the end of a line (hard line break)
 - Fenced code blocks (see the reference)
 
 Two things have no Markdown equivalent, so they are tags:
 
 - **Underline:** `{% u %}underlined{% /u %}`
-- **A link whose URL contains spaces or parentheses:**
+- **A link whose URL contains spaces, parentheses, or angle brackets:**
   `{% link href="https://x.com/a (b)" %}text{% /link %}`
 
 ## The blocks at a glance
@@ -202,7 +203,8 @@ and {% key key="F1" /%} and {% inline-image url="asset:02grc2jqacve" width=14 /%
 | Highlight a note, tip, or warning | `callout` (`type=`) | bold text |
 | Show the same code in several languages | `code` with fenced tabs | one fence with mixed code |
 | Walk through code step by step | `code-steps` | a numbered list of fences |
-| A table with spans, alignment, or cell colours | `table` / `row` / `cell` | a GFM pipe table (it is rewritten) |
+| A plain table | a GFM pipe table | `{% table %}` markup (pipes are canonical for plain tables) |
+| A table with spans, cell colours, widths, or mixed alignment | `table` / `row` / `cell` | a pipe table (it cannot express these) |
 | Group alternative content the reader switches between | `tabs` / `tab` | headings |
 | Collapse optional / long detail | `accordion-group` / `accordion` | `tabs` |
 | A grid of navigation links | `cards` / `card` | a bullet list of links |
@@ -216,14 +218,15 @@ next save.
 
 - **Keep block open/close tags on their own lines** (rule 1). This is the most
   common mistake.
-- **Tables are `row` / `cell` trees**, not Markdown pipes. A pipe table is
-  accepted on input but rewritten into the `{% table %}` form on the next save,
-  so don't be surprised when your pipe grid comes back expanded.
+- **A plain pipe table is canonical and stays a pipe table.** The `{% table %}`
+  form appears only when the table uses something pipes cannot express (spans,
+  cell backgrounds, column widths, mixed alignment, multi-block cells, the
+  `auto` layout); such a table comes back expanded into `row` / `cell` markup.
 - **Multi-language code is `{% code %}` wrapping bare fences**, each annotated with
-  `{% title="…" %}`. There is **no** `{% tab %}` inside `{% code %}` — that tag is
+  `{% title="…" %}`. There is **no** `{% tab %}` inside `{% code %}`; that tag is
   only for generic content tabs.
 - **Line-number / wrap settings ride on the `{% code %}` open tag**, once, shared
-  by every tab — not per fence.
+  by every tab, not per fence.
 - **Accordions collapse by default.** Add a bare `open=true` to expand one on load.
 - **An intentionally empty paragraph** serialises as `{% p /%}`. You rarely write
   this by hand.
@@ -231,12 +234,16 @@ next save.
   in `{% html %}` can lose its indentation on round-trip.
 - **`conditional audience="…"` must name a real project audience.** Omit the
   attribute for public / all-audiences content.
+- **Never invent a tag.** An unrecognised `{% tag %}` renders as nothing, and the
+  sync check flags it (`unknown_tag`).
+- **Never link to `app.developerhub.io`.** That is the editor, not the docs;
+  readers cannot follow it. Link the published page instead.
 
 ## Page frontmatter
 
 A page stored as a `.md` file (a Git-synced repo, or an export) opens with a YAML
 `--- … ---` block, then a blank line, then the Markdoc body. The field set is
-**fixed** — the same keys on every page, not project-specific — so keep the block
+**fixed** (the same keys on every page, not project-specific), so keep the block
 intact and edit the values in place; put the Markdoc body after it.
 
 ```yaml
@@ -257,14 +264,22 @@ tags:
 |---|---|
 | `type` | `page` for a content page. An index entry may instead be `category`, `label`, `separator`, or `link`; those carry fewer fields (`category`/`label` → `type` + `title`; `separator` → `type`; `link` → `type` + `title` + `url`). |
 | `title` | The page title (its `#` H1). |
-| `listed` | `true` / `false` — whether the page appears in navigation. Defaults to `true` when omitted. |
+| `listed` | `true` / `false`: whether the page appears in navigation. Defaults to `true` when omitted. |
 | `slug` | URL slug. For a Git-synced page the file path *is* the slug, so this field is informational; renaming the file is what changes the URL. |
 | `description` | Meta / SEO description. Left empty when unset. |
 | `index_title` | Overrides the title shown in the sidebar / index; falls back to `title`. |
-| `hidden` | `true` / `false` — hide the page from the auto-generated index. Defaults to `false`. |
+| `hidden` | `true` / `false`: hide the page from the auto-generated index. Defaults to `false`. |
 | `keywords` | Comma-separated search keywords. |
 | `tags` | Comma-separated page tags. |
+| `audience` | Present only on an audience-gated page: the audience id it is shown to. Omit for public pages. In a Git repo this key appears when the page is gated. To un-gate a page, set the value to empty rather than deleting the line (an absent key leaves the current audience in place), and note that an id matching no project audience hides the page from every reader. |
 
-**Preserve every key, even when its value is empty** — the format writes them all.
-This skill covers the body; leave the frontmatter block in place and change only the
-values you mean to change.
+**Preserve every key, even when its value is empty**: the format writes them all.
+Keep the block within 15 lines: sync reads at most 15 frontmatter lines and
+ignores keys past that. This skill covers the body; leave the frontmatter block in
+place and change only the values you mean to change.
+
+Note the `slug` field differs by source: a zip/editor export includes `slug`, but a
+**Git-synced page has no `slug:` key** because the file path *is* the slug. For the
+repository layout around the page (folders, `_nav.yaml`, settings, images, and API
+reference specs), see the
+[`organize-docs-repo`](../organize-docs-repo/SKILL.md) skill.

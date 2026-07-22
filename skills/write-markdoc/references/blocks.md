@@ -1,13 +1,13 @@
-# DeveloperHub Markdoc — full block & tag reference
+# DeveloperHub Markdoc: full block & tag reference
 
 Every DeveloperHub Markdoc tag, its form, attributes, defaults, and allowed
 values. Read [`../SKILL.md`](../SKILL.md) first for the core dialect rules.
 
 **Conventions used below**
 
-- **Form** — `block` (`{% x %}…{% /x %}`), `inline` (`{% x /%}`, self-closing), or
+- **Form**: `block` (`{% x %}…{% /x %}`), `inline` (`{% x /%}`, self-closing), or
   `fence` (a fenced code block with `{% … %}` annotations).
-- **Default** — omit the attribute when its value equals this; the serialiser does.
+- **Default**: omit the attribute when its value equals this; the serialiser does.
 - Booleans are **bare** (`open=true`); numbers are bare (`width=357`); strings are
   quoted (`title="Note"`).
 
@@ -25,15 +25,19 @@ Prefer plain Markdown for all of these.
 | Inline code | `` `code` `` |
 | Underline | `{% u %}underlined{% /u %}` (no Markdown equivalent) |
 | Link | `[text](/support-center/slug)` |
-| Link with spaces/parens in URL | `{% link href="https://x.com/a (b)" %}text{% /link %}` |
+| Link with spaces, parens, or `<` `>` in URL | `{% link href="https://x.com/a (b)" %}text{% /link %}` |
 | Heading | `##` … `######` (reserve `#` for the page title) |
 | Bullet list | `- item` (nest by indenting) |
-| Ordered list | `1. item` |
+| Ordered list | `1. item` (a non-1 start is honoured) |
 | Blockquote | `> quoted` |
 | Horizontal rule | `---` |
+| Hard line break | a trailing `\` at the end of the line |
 | Empty paragraph | `{% p /%}` (rarely authored by hand) |
 
-Links must carry real text — a text-less link round-trips to nothing.
+Links must carry real text: a text-less link round-trips to nothing. The
+serialiser backslash-escapes literal specials (`` ` `` `*` `_` `~` `[` `]` `{`
+`}` `<` `>` `&`) in plain text, so hand-written unescaped ones are rewritten on
+the next save (churn, not loss).
 
 ---
 
@@ -100,7 +104,7 @@ function fibonacci(num) {
 | `showLineNumbers` | boolean | `false` | omit inside `{% code %}` (set it there) |
 | `wrapLine` | boolean | `true` | omit inside `{% code %}` |
 | `highlightLines` | string | `""` | e.g. `"1,3-5"` |
-| `id` | string | — | only inside `code-steps` (see below) |
+| `id` | string | none | only inside `code-steps` (see below) |
 
 The language comes from the fence token itself (` ```js `); default `plaintext`.
 
@@ -142,9 +146,10 @@ Inside `code-steps`, a language fence's `showLineNumbers` defaults to `true`.
 
 ### `table` / `row` / `cell`
 
-An explicit `row` / `cell` tree. Each cell body is itself block content. Use this
-(not a pipe table) whenever you need cell spans, alignment, backgrounds, or the
-fluid `auto` layout.
+An explicit `row` / `cell` tree. Each cell body is itself block content. A plain
+table serialises as a normal GFM pipe table; this tag form is used when the table
+needs cell spans, backgrounds, column widths, mixed (non-uniform) alignment,
+multi-paragraph cells, a headerless shape, or the fluid `auto` layout.
 
 ```markdoc
 {% table layout="auto" %}
@@ -173,7 +178,7 @@ int
 |---|---|---|---|
 | `layout` | enum | `fixed` | `fixed`, `auto` (last column fluid) |
 
-`row` — no attributes; contains `cell` children only.
+`row`: no attributes; contains `cell` children only.
 
 `cell` attrs:
 
@@ -186,9 +191,9 @@ int
 | `rowspan` | number | `1` | |
 | `colwidth` | number | (none) | column width in px |
 
-> A plain GFM pipe table is accepted on input but is rewritten into this
-> `{% table %}` form on the next save. Don't be surprised when it comes back
-> expanded.
+> A plain pipe table is canonical and round-trips as a pipe table, uniform
+> per-column alignment included. It is only rewritten into this `{% table %}`
+> form when it uses something pipes cannot express.
 
 ### `image`
 
@@ -241,7 +246,7 @@ iOS content.
 {% /tabs %}
 ```
 
-`tabs` — no attributes; contains `tab` children only.
+`tabs`: no attributes; contains `tab` children only.
 
 `tab` attrs:
 
@@ -265,7 +270,7 @@ Second section.
 {% /accordion-group %}
 ```
 
-`accordion-group` — no attributes; contains `accordion` children only.
+`accordion-group`: no attributes; contains `accordion` children only.
 
 `accordion` attrs:
 
@@ -317,7 +322,7 @@ Content only beta users see.
 ### `html`
 
 Raw custom HTML. The HTML is the body, not an attribute. Keep it to a single
-logical line where practical — multi-line indented HTML can lose indentation on
+logical line where practical; multi-line indented HTML can lose indentation on
 round-trip.
 
 ```markdoc
@@ -445,11 +450,13 @@ Variables are written in **percent form**, not as a tag:
 %user.name%    dotted keys resolve into nested values
 ```
 
-- Keys are dotted identifiers (`api.base`).
+- Keys are dotted identifiers (`api.base`). A key segment never starts with a
+  digit (`%2fa%` stays literal text).
 - Never echo `%product%` back to a user as literal text, and never replace it in
   source.
 - A `%…%` inside inline code or a code fence stays literal.
-- An undefined key renders as `{{key}}`.
+- An undefined key shows as `{{key}}` in the editor and renders as empty text on
+  the published page.
 
 ---
 
