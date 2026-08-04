@@ -278,6 +278,12 @@ Keep the block within 15 lines: sync reads at most 15 frontmatter lines and
 ignores keys past that. This skill covers the body; leave the frontmatter block in
 place and change only the values you mean to change.
 
+A **changelog post** is not a page: it carries its own three-key block (`title`,
+`date`, `published`) and none of the fields above. Its body is this same Markdoc,
+but link to a docs page from a post with the site path (`/guide/installation`),
+never a relative `.md` path. See
+[`organize-docs-repo`](../organize-docs-repo/SKILL.md) for the post file format.
+
 Note the `slug` field differs by source: a zip/editor export includes `slug`, but a
 **Git-synced page has no `slug:` key** because the file path *is* the slug. For the
 repository layout around the page (folders, `_nav.yaml`, settings, images, and API

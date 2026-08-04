@@ -33,6 +33,10 @@ v1/                            # a version: folder name IS the version slug
   refs/                        # RESERVED folder: API reference specs
     petstore.yaml              # an OpenAPI/spec file: basename IS the reference slug
     petstore.settings.yaml     # that reference's display-settings sidecar
+changelogs/                    # RESERVED folder: changelogs (project-level)
+  product-updates/             # a changelog: folder name IS its URL path
+    _settings.yaml             # changelog settings
+    4-august-2026.md           # a post: basename IS the post slug
 assets/                        # content-addressed images the sync materialized
   a1b2c3d4e5f6.png
 README.md                      # IGNORED (a root file that is not developerhub.yaml)
@@ -52,6 +56,9 @@ Config files sit at fixed depths; pages nest as deep as their parent chain goes:
 | 3+ | `v1/guide/intro.md` | A page (3 = top level; each extra folder = one more parent page, unbounded) |
 | 3 | `v1/refs/petstore.yaml` | An API reference spec |
 | 3 | `v1/refs/petstore.settings.yaml` | A reference sidecar |
+| 2 | `changelogs/` | The reserved changelogs folder (project-level, not a version) |
+| 3 | `changelogs/product-updates/_settings.yaml` | Changelog settings |
+| 3 | `changelogs/product-updates/4-august-2026.md` | A changelog post (exactly depth 3; posts do not nest) |
 
 Page nesting is unbounded, but it never deepens the URL: a page's address stays
 `/{version}/{doc}/{slug}` however deep the file sits, because the slug is the
@@ -78,8 +85,10 @@ resolves to one of these:
 | `{version}/{doc}/[{parent}/…]{page}.md` | A page (needs at least 3 segments) | Yes |
 | `{version}/refs/{slug}.{yaml\|yml\|json}` | API reference spec | Yes |
 | `{version}/refs/{slug}.settings.yaml` | Reference sidecar | Yes |
+| `changelogs/{changelog}/{slug}.md` | A changelog post | Yes |
+| `changelogs/{changelog}/_settings.yaml` | Changelog settings | Yes |
 | Any image file, anywhere (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif .heic .heif`) | An asset | Yes |
-| A `.md` too shallow to place (e.g. `v1/intro.md`, or any `.md` under `refs/`) | Unplaceable content | No, but **warns** so you can move it |
+| A `.md` too shallow to place (e.g. `v1/intro.md`, any `.md` under `refs/`, or a `.md` at the wrong depth under `changelogs/`) | Unplaceable content | No, but **warns** so you can move it |
 | Any other root file; any non-image file anywhere else | Ignored | No, silently |
 
 The one warned case is a **misplaced `.md`**: a Markdown file inside the tree but
@@ -95,6 +104,10 @@ Edges worth knowing:
 - Dotfiles are never assets, whatever their extension.
 - The sidecar suffix is exactly `.settings.yaml`: a `{slug}.settings.json` under
   `refs/` classifies as a *spec* named `{slug}.settings`.
+- `changelogs/` is matched at the repo root **before** the version rules, so a
+  `_settings.yaml` under it is always changelog settings, never a documentation's
+  (they sit at the same depth). A version therefore cannot be named `changelogs`;
+  DeveloperHub refuses the name when the version is created or renamed.
 
 ### Basepath
 
@@ -417,6 +430,104 @@ References and documentations share one slug namespace per version (both live at
 the collision is refused with a `slug_conflict` warning. A repo-created reference
 stays unpublished until its sidecar says `published: true`.
 
+## Changelogs: `changelogs/`
+
+`changelogs/` at the repo root is a **reserved** folder holding changelogs (release
+notes, product updates). A changelog belongs to the **project**, not to a version,
+which is why it sits beside the version folders instead of inside one.
+
+```
+changelogs/
+  product-updates/
+    _settings.yaml
+    4-august-2026.md
+    1-august-2026.md
+```
+
+- **The folder name is the changelog's path** — its URL is `/{path}` — and it is
+  directory-owned: rename the folder to change it, never write a `path:` key.
+- **Each post is one `.md` file directly inside that folder**, and its basename is
+  the post slug (`/{path}/{slug}`). Posts do **not** nest: a `.md` deeper than
+  `changelogs/{changelog}/{slug}.md` is unplaceable and warned. A post basename must
+  be unique within its changelog.
+- **Images** anywhere under `changelogs/` follow the ordinary asset rules; any other
+  non-image file is ignored.
+- **A changelog exists on its `_settings.yaml` alone.** Unlike a version or a
+  documentation, it needs no content: an empty changelog is representable (Git
+  cannot store an empty folder, so the settings file is what makes it exist).
+- **Deleting the folder deletes the changelog**; deleting a post's `.md` soft-deletes
+  the post with the same 30-day grace window a page gets.
+
+### Post frontmatter
+
+A post opens with a YAML block, then a blank line, then the Markdoc body — but the
+key set is **not** a page's, and it is parsed as real YAML (so a `title` containing
+a colon is safe when quoted):
+
+```markdown
+---
+title: '4 August 2026'
+date: '2026-08-04 13:06:23'
+published: true
+---
+
+Markdoc body, identical in syntax to a page body.
+```
+
+| Key | Type | Meaning |
+|---|---|---|
+| `title` | string | The post's heading in the changelog feed. |
+| `date` | date | `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`. Owns the post's displayed date **and its position in the feed** (newest first); use the time to order two posts made on the same day. |
+| `published` | bool | Whether readers see the post. `false` keeps the file in the repo but hides the post. |
+
+Keys are present-only: an absent key leaves the current value untouched, so an
+edit that only touches the body is safe. An unrecognised key is reported
+(`changelog_key_ignored`) and dropped — the slug in particular comes from the
+filename, never from frontmatter. A post committed with **no `date:`** is dated when
+the sync runs (`changelog_date_missing` warns), which is rarely what you want for a
+backdated entry. On the way out DeveloperHub writes `YYYY-MM-DD` when the time is
+midnight and `YYYY-MM-DD HH:MM:SS` otherwise, so a hand-written plain date stays as
+you wrote it.
+
+There is **no ordering file** for a changelog: no `_nav.yaml`, and no list in any
+settings file. Dates are the whole ordering model.
+
+### `changelogs/{changelog}/_settings.yaml`
+
+```yaml
+title: Product updates
+description: What shipped, and when.
+published: true
+```
+
+| Key | Type | Meaning |
+|---|---|---|
+| `title` | string | The changelog's title. |
+| `description` | string | Short description shown with the feed. |
+| `published` | bool | Whether the changelog is live. |
+
+`path` is directory-owned and reported as ignored if written here. A repo-created
+changelog stays unpublished until this file says `published: true`.
+
+### Links inside a post
+
+A post body keeps **site paths**, not relative `.md` paths:
+
+```markdown
+See [installation](/guide/installation).
+```
+
+The relative-`.md` rewriting described in the next section applies to pages only —
+a relative link written in a post is left exactly as typed and will not resolve for
+readers. Images are the exception and behave normally (relative paths, rewritten in
+both directions).
+
+### Draft branches
+
+Changelogs are **published-branch only**. A post has no draft form in DeveloperHub
+(publishing is the `published` flag), so nothing under `changelogs/` applies from a
+draft branch; commit changelog work to the published branch.
+
 ## Internal links between pages
 
 In the repo, link to another page by a **relative path to its `.md` file**:
@@ -480,6 +591,7 @@ Blocking findings (failure):
 | `nav_invalid` | `_nav.yaml` could not be parsed; its ordering would not apply. |
 | `settings_invalid` | A settings file is not valid YAML, or not a mapping. |
 | `spec_invalid` | The API reference spec failed validation (remember: single self-contained file). |
+| `changelog_frontmatter_invalid` | A changelog post's frontmatter is not readable YAML (or its `date:` cannot be parsed); its title, date and published state would be left unchanged. |
 
 Non-blocking findings (warning / notice):
 
@@ -497,6 +609,9 @@ Non-blocking findings (warning / notice):
 | `nav_duplicate_entry` | A page is listed more than once. |
 | `settings_key_ignored` | An unrecognised or app-owned settings key; it will not apply. |
 | `version_deleted` / `documentation_deleted` | The PR empties a whole version or documentation: a confirmation, not an error. |
+| `changelog_date_missing` | A changelog post has no `date:`; a new post would be dated when it syncs rather than when it was written. |
+| `changelog_key_ignored` | A frontmatter key a post does not own (the slug comes from the filename); it will not apply. |
+| `changelog_deleted` | The PR removes a whole changelog and its posts: a confirmation, not an error. |
 
 ## Ownership model (why some keys are ignored)
 

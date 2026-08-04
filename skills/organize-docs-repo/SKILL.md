@@ -1,17 +1,18 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.1"
+  version: "1.2"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
   the version / documentation / page folder structure; navigation in _nav.yaml;
   version, documentation, or project settings (_settings.yaml, developerhub.yaml);
   images and assets in a synced repo; API reference specs (the refs folder);
-  adding, moving, renaming, nesting, grouping, reordering, or hiding pages,
-  categories, versions, or documentations in a Git-synced repo; or interpreting
-  and fixing findings from the DeveloperHub pull request sync check. Pair with
-  write-markdoc, which covers the Markdoc syntax inside a page body.
+  changelogs and changelog posts (the changelogs folder); adding, moving,
+  renaming, nesting, grouping, reordering, or hiding pages, categories, versions,
+  or documentations in a Git-synced repo; or interpreting and fixing findings from
+  the DeveloperHub pull request sync check. Pair with write-markdoc, which covers
+  the Markdoc syntax inside a page or post body.
 ---
 
 # Organizing a DeveloperHub docs repository
@@ -48,6 +49,10 @@ v1/                            # a version: folder name IS the version slug
   refs/                        # RESERVED: API reference specs (not pages)
     petstore.yaml              # a spec file: filename IS the reference slug
     petstore.settings.yaml     # that reference's display sidecar
+changelogs/                    # RESERVED: changelogs (project-level, not versioned)
+  product-updates/             # a changelog: folder name IS its URL path
+    _settings.yaml             # changelog settings
+    4-august-2026.md           # a post: filename IS the post slug
 assets/                        # content-addressed images the sync materialized
 README.md   .gitignore         # IGNORED: not ours, left untouched
 ```
@@ -74,6 +79,11 @@ README.md   .gitignore         # IGNORED: not ours, left untouched
    documentation exists once it holds a page; a version needs a page or a ref
    spec (settings for an empty folder just warn). A repo-created version or
    reference stays unpublished until its settings file says `published: true`.
+   (A changelog is the exception: it exists on its `_settings.yaml` alone, so an
+   empty changelog is representable.)
+7. **`changelogs/` at the repo root is reserved.** It holds changelogs, which are
+   project-level and sit outside the version tree, so a version can never be named
+   `changelogs` (DeveloperHub refuses the name).
 
 ## Scope: what is managed vs ignored
 
@@ -81,8 +91,11 @@ DeveloperHub manages `developerhub.yaml` and the version/documentation folders i
 implies. A real repo also has a README, a LICENSE, `.gitignore`, lockfiles, CI
 config: **all ignored, silently.** Classification is by file type:
 
-- A `.md` at valid depth is a **page**; a `.md` too shallow (or under `refs/`) is
-  **unplaceable** and warned so you can move it.
+- A `.md` at valid depth is a **page**; a `.md` too shallow (or under `refs/`, or
+  at the wrong depth under `changelogs/`) is **unplaceable** and warned so you can
+  move it.
+- A `.md` at `changelogs/{changelog}/{slug}.md` is a **changelog post**, never a
+  page.
 - An **image** file (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif
   .heic .heif`) anywhere is an **asset**.
 - Recognized config files (`_settings.yaml`, `_nav.yaml`, `developerhub.yaml`, ref
@@ -161,6 +174,50 @@ at depth 3: the spec `{version}/refs/{slug}.{yaml|yml|json}` and its sidecar
 `refs/` is unplaceable. A spec must be a single self-contained file; multi-file
 specs split with `$ref` across files do not validate.
 
+## Changelogs: `changelogs/`
+
+`changelogs/` at the repo root is reserved for changelogs (release notes / product
+updates). A changelog is **project-level**, not part of a version, so it sits
+beside the version folders rather than inside one:
+
+```
+changelogs/product-updates/_settings.yaml     # title, description, published
+changelogs/product-updates/4-august-2026.md   # one file per post
+```
+
+- **The folder name is the changelog's URL path** (`/product-updates`), and **the
+  post filename is the post slug**. Both are path-owned: rename the folder or file,
+  never write a `path:` or `slug:` key.
+- **One file per post**, flat inside the changelog folder. A `.md` nested deeper is
+  unplaceable; images anywhere below are ordinary assets.
+- **Posts are ordered by their `date:`,** newest first. There is no `_nav.yaml` for
+  a changelog and no order list to maintain.
+- **An empty changelog is legal** — the `_settings.yaml` alone makes it exist.
+
+A post's frontmatter is **not** a page's. It is real YAML with three keys:
+
+```markdown
+---
+title: '4 August 2026'
+date: '2026-08-04'
+published: true
+---
+
+Markdoc body, exactly as in a page.
+```
+
+`date` accepts `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` (use the time to order two
+posts made the same day) and owns the post's displayed date — omit it on a new post
+and it is dated whenever the sync runs. `published: false` keeps the file in the
+repo but hides the post from readers, so a post can be staged in a pull request and
+published later by flipping one line. Anything else in the block is ignored with a
+warning.
+
+Two differences from pages worth remembering: **link to a docs page from a post
+with its site path** (`[install](/guide/installation)`), not a relative `.md` path
+— posts keep site hrefs, and a relative link would not resolve. And **posts are not
+draftable**: they only sync on the published branch (see below).
+
 ## Internal links
 
 Link page-to-page with a **relative `.md` path**: `[install](./installation.md)`.
@@ -189,11 +246,19 @@ broken). Fragments (`#section`) are preserved.
 | Add a documentation | Create `{version}/{doc}/` with `_settings.yaml`, `_nav.yaml`, and its first page (an empty folder does not sync); list it in the version's `documentations:`. |
 | Add an image | Commit it next to the page (or anywhere) and reference it by relative path. |
 | Add an API reference | Commit the spec at `{version}/refs/{slug}.{yaml\|json}` and a `{slug}.settings.yaml`; list `{slug}` in the version's `references:`. |
+| Add a changelog | Create `changelogs/{path}/_settings.yaml` (that alone is enough; posts can come later). |
+| Add a changelog post | Create `changelogs/{path}/{slug}.md` with `title` / `date` / `published` frontmatter and a Markdoc body. No nav entry, no order list. |
+| Publish / unpublish a post | Flip `published:` in its frontmatter (the file stays either way). |
+| Reorder posts | Change their `date:` values — that is the only ordering. |
+| Rename a changelog or post | Rename the folder or the `.md` file (both are path-owned). |
+| Delete a post | Delete the `.md`. Soft for 30 days, like a page. |
 
 Do structural work (nav, settings, renames, new pages, new versions) on the
 **published branch**. An optional draft branch is body-only; changes to structure
 there do not take effect, and frontmatter counts as structure (a frontmatter edit
-on the draft branch is deferred too).
+on the draft branch is deferred too). **Changelogs are published-branch only** —
+a post has no draft form at all, so nothing under `changelogs/` applies from a
+draft branch.
 
 ## Pull requests: the sync check
 
@@ -233,6 +298,9 @@ The finding codes and their meanings are tabled in the reference.
   an empty value clears, a deleted line leaves the old value in place.
 - **You cannot clear a text setting from a file.** An empty `title:`, `name:`,
   or `description:` in a settings file is ignored, not applied.
+- **A changelog post's frontmatter is its own shape** (`title` / `date` /
+  `published`), not the page block — and its links are site paths, not relative
+  `.md` paths. `changelogs/` is reserved, so no version may be named that.
 
 ## Full reference
 
