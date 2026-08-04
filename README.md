@@ -26,11 +26,31 @@ Detailed references:
 
 ## Install
 
+### Claude Code
+
+This repo is also a Claude Code plugin marketplace, which is the install that keeps
+itself current as the DeveloperHub format changes:
+
+```
+/plugin marketplace add developerhub-io/dh-skills
+/plugin install dh-skills@developerhub
+```
+
+The skills arrive namespaced, as `dh-skills:write-markdoc` and
+`dh-skills:organize-docs-repo`. To pick up new releases without reinstalling, enable
+auto-update once: run `/plugin`, open the **Marketplaces** tab, select
+**developerhub**, and choose **Enable auto-update**. Claude Code then refreshes the
+plugin in the background shortly after a session starts.
+
+### Any agent
+
 Install straight from this repo with the [`skills` CLI](https://www.npmjs.com/package/skills):
 
 ```bash
 npx skills add developerhub-io/dh-skills
 ```
+
+This copies the files in, so re-run `npx skills update` to pick up a new release.
 
 Or copy the `skills/write-markdoc` folder into your agent's skills directory
 (`.claude/skills/`, `.cursor/skills/`, …). `SKILL.md` uses the portable Agent

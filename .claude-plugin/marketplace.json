@@ -1,0 +1,16 @@
+{
+  "name": "developerhub",
+  "description": "Official DeveloperHub Agent Skills for writing and organizing DeveloperHub documentation.",
+  "owner": {
+    "name": "DeveloperHub",
+    "email": "hello@developerhub.io",
+    "url": "https://developerhub.io"
+  },
+  "plugins": [
+    {
+      "name": "dh-skills",
+      "source": "./",
+      "description": "Teaches agents DeveloperHub Markdoc syntax and the layout of a Git-synced docs repo."
+    }
+  ]
+}
