@@ -280,6 +280,10 @@ items:
   - link:                      # an external link in the sidebar
       title: API status
       url: https://status.example.com
+  - page: authentication       # an entry with a sidebar icon
+    icon: key
+  - category: Guides
+    icon: https://assets.example.com/guides.svg
 ```
 
 Entry forms (the writer emits exactly one form per node; the parser accepts these):
@@ -292,6 +296,57 @@ Entry forms (the writer emits exactly one form per node; the parser accepts thes
 | `- label: Text` | A label (a plain heading in the sidebar). |
 | `- link:` + `title:` + `url:` | An external link. |
 | `- separator` | A divider. |
+
+### Icons
+
+Any entry except a separator may carry an optional `icon:`, written as a **sibling of
+the type key** (not inside the `link:` mapping):
+
+```yaml
+items:
+  - introduction                       # no icon
+  - page: authentication
+    icon: key                          # a bare name is the SOLID style
+  - category: Guides
+    icon: far:folder-open              # far: = regular
+  - label: Resources
+    icon: tag
+  - link:
+      title: Source on GitHub
+      url: https://github.com/acme/docs
+    icon: fab:github                    # fab: = brands
+```
+
+- The value is either a **FontAwesome icon token** or the **absolute `http(s)` URL of
+  an image** (an uploaded SVG/PNG, or any image URL). A value starting `http://` or
+  `https://` is read as an image; anything else must be a valid token.
+- A token is `[style:]name`. **A bare name is the solid style** (`rocket`,
+  `book-open`); the other styles carry a prefix:
+
+  | Token | Style |
+  |---|---|
+  | `rocket` | Solid (`fas`) |
+  | `far:bell` | Regular (`far`) |
+  | `fab:github` | Brands (`fab`) |
+
+- **Solid is bare and only bare.** There is no `fas:` prefix, so one icon has exactly
+  one spelling and `_nav.yaml` diffs stay stable.
+- **Anything else is rejected**, with a `nav_icon_invalid` warning, and the entry
+  syncs with no icon. Relative image paths, protocol-relative `//host/x.svg`, raw
+  FontAwesome classes (`fas fa-key`), `fas:rocket`, and unknown styles (`fal:bell`,
+  `lucide:rocket`) are all invalid.
+- **A page leaf must expand to carry one.** `- introduction` has no room for a
+  sibling key, so an iconed page is written `- page: introduction` + `icon:`. Entries
+  without an icon keep the short form, so adding icons to a few pages does not
+  rewrite the rest of the file.
+- **Icons are meant to be sparse.** As soon as any one entry in a documentation has
+  an icon, the sidebar reserves the icon column on *every* row so labels stay on a
+  single straight edge; rows without an icon leave it empty. Nothing is drawn in the
+  empty slots.
+- **Delete the line to remove an icon.** The repo is authoritative: an entry with no
+  `icon:` key clears one that was set in the editor.
+- Icons do **not** live in page frontmatter in a synced repo (unlike a zip export,
+  where there is no `_nav.yaml` to hold them).
 
 Rules:
 
@@ -607,6 +662,7 @@ Non-blocking findings (warning / notice):
 | `nav_unknown_entry` | `_nav.yaml` lists a page with no file behind it; the entry is skipped. |
 | `nav_drift_unlisted` | A page is not listed in `_nav.yaml`; it is appended to the end of its section. |
 | `nav_duplicate_entry` | A page is listed more than once. |
+| `nav_icon_invalid` | An entry's `icon:` is neither a FontAwesome solid name nor an `http(s)` image URL; the icon is ignored and the entry keeps no icon. |
 | `settings_key_ignored` | An unrecognised or app-owned settings key; it will not apply. |
 | `version_deleted` / `documentation_deleted` | The PR empties a whole version or documentation: a confirmation, not an error. |
 | `changelog_date_missing` | A changelog post has no `date:`; a new post would be dated when it syncs rather than when it was written. |

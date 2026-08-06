@@ -1,7 +1,7 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.2"
+  version: "1.4"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
@@ -129,7 +129,19 @@ items:
   - link:                      # an external link
       title: API status
       url: https://status.example.com
+  - page: authentication       # any entry except a separator can carry an icon
+    icon: key
 ```
+
+**Icons** are optional and live here, not in frontmatter. Add `icon:` alongside the
+entry's type key on a page, category, label or link. The value is either a
+[FontAwesome 7](https://fontawesome.com/search?ic=free) token or the URL of an image. A
+bare token is the **solid** style (`key`, `book-open`); prefix `far:` for regular and
+`fab:` for brands (`far:bell`, `fab:github`). A page leaf must expand from its bare
+path form to `- page: {slug}` to carry one. Icons are sparse by design: as soon as
+any one entry in a documentation has an icon, the sidebar reserves the icon column
+on **every** row so the labels stay on one straight edge, and rows without an icon
+simply leave it empty. Delete the line to remove an icon.
 
 Key rules: page entries are **doc-relative and drop `.md`**; parent-page folders
 *are* part of the path (`setup/advanced`) but categories are **not**; **hidden
@@ -234,6 +246,7 @@ broken). Fragments (`#section`) are preserved.
 | Nest a page under a parent page | Put it at `{version}/{doc}/{parent}/{slug}.md`; in `_nav.yaml` make the parent `- page: {parent}` with `items:` listing `{parent}/{slug}`. |
 | Group pages under a category | Leave the files where they are; in `_nav.yaml` add `- category: Title` with the pages as its `items:`. |
 | Add a label / separator / external link | Add `- label: Text`, `- separator`, or a `- link:` block to `_nav.yaml`. |
+| Give a page or category an icon | Add `icon: {name}` beside the entry's type key in `_nav.yaml` (bare = solid, `far:`/`fab:` for regular/brands, or an image URL); expand a page leaf to `- page: {slug}` first. Remove the line to drop the icon. |
 | Reorder pages | Reorder the entries in `_nav.yaml` (the folder order is not significant). |
 | Reorder docs / references | Reorder `documentations:` / `references:` in the version `_settings.yaml`. |
 | Hide a page from the index | Set `hidden: true` in its frontmatter (keep it in `_nav.yaml`). |

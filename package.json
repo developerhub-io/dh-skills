@@ -1,6 +1,6 @@
 {
   "name": "@developerhub/dh-skills",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Agent Skills that teach AI coding agents to author DeveloperHub Markdoc — the exact syntax for every content block.",
   "keywords": [
     "developerhub",
