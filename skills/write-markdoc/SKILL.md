@@ -1,7 +1,7 @@
 ---
 name: write-markdoc
 metadata:
-  version: "1.1"
+  version: "1.2"
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub
@@ -94,7 +94,7 @@ Two things have no Markdown equivalent, so they are tags:
 | `synced` | block | Reusable synced block, by id |
 | `badge` | inline | Small coloured label |
 | `key` | inline | Keyboard key |
-| `icon` | inline | Font Awesome icon |
+| `icon` | inline | Font Awesome icon (names: [`fontawesome-icons.md`](../organize-docs-repo/references/fontawesome-icons.md)) |
 | `glossary` | inline | Glossary term |
 | `inline-image` | inline | Inline image |
 | `%KEY%` | inline | Variable placeholder |

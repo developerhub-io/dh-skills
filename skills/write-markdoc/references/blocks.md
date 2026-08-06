@@ -412,6 +412,13 @@ A Font Awesome icon.
 |---|---|---|
 | `classes` | string | `fas fa-star` |
 
+`classes` is a style plus a name: `fas fa-{name}` (solid), `far fa-{name}` (regular),
+or `fab fa-{name}` (brands). DeveloperHub ships **FontAwesome 7 Free**, and the name is
+never validated, so an icon that is not in that set renders as blank space with no
+error. Take the name from the companion `organize-docs-repo` skill's
+[`fontawesome-icons.md`](../../organize-docs-repo/references/fontawesome-icons.md),
+which lists every icon that can be drawn.
+
 ### `glossary`
 
 Links a word to its glossary entry (the definition is resolved live from the

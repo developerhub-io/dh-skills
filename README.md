@@ -20,9 +20,11 @@ repository layout around it (folders, navigation, settings, assets, and refs).
 
 Detailed references:
 [`skills/write-markdoc/references/blocks.md`](skills/write-markdoc/references/blocks.md)
-(per-block) and
+(per-block),
 [`skills/organize-docs-repo/references/repo-structure.md`](skills/organize-docs-repo/references/repo-structure.md)
-(per-file).
+(per-file), and
+[`skills/organize-docs-repo/references/fontawesome-icons.md`](skills/organize-docs-repo/references/fontawesome-icons.md)
+(every icon name a sidebar entry or an `{% icon %}` tag can use).
 
 ## Install
 

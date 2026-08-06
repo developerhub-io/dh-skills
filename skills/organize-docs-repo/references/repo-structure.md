@@ -335,6 +335,15 @@ items:
   syncs with no icon. Relative image paths, protocol-relative `//host/x.svg`, raw
   FontAwesome classes (`fas fa-key`), `fas:rocket`, and unknown styles (`fal:bell`,
   `lucide:rocket`) are all invalid.
+- **A name that does not exist is *not* rejected.** Only the token's shape is checked,
+  never the name, so `icon: rocket-launch` (a FontAwesome Pro icon) or a typo passes
+  the sync, draws nothing, and leaves a blank slot in the reserved icon column with no
+  warning anywhere. DeveloperHub ships **FontAwesome 7 Free**, classic family only:
+  1422 solid, 169 regular, 566 brands. The full name list is
+  [`fontawesome-icons.md`](fontawesome-icons.md); pick from it instead of recalling a
+  name, and note that `far:` covers a small set, so most icons only exist bare (solid).
+  Legacy FA5 spellings (`search`, `save`) still render, but write the canonical name
+  (`magnifying-glass`, `floppy-disk`).
 - **A page leaf must expand to carry one.** `- introduction` has no room for a
   sibling key, so an iconed page is written `- page: introduction` + `icon:`. Entries
   without an icon keep the short form, so adding icons to a few pages does not
