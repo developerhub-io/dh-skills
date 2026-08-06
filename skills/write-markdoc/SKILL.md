@@ -1,7 +1,7 @@
 ---
 name: write-markdoc
 metadata:
-  version: "1.2"
+  version: "1.3"
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub
@@ -272,6 +272,11 @@ tags:
 | `keywords` | Comma-separated search keywords. |
 | `tags` | Comma-separated page tags. |
 | `audience` | Present only on an audience-gated page: the audience id it is shown to. Omit for public pages. In a Git repo this key appears when the page is gated. To un-gate a page, set the value to empty rather than deleting the line (an absent key leaves the current audience in place), and note that an id matching no project audience hides the page from every reader. |
+
+**Write the values bare, never quoted.** Despite the `---` fences this block is not
+parsed as YAML but line by line on fixed keys, so a single-quoted value keeps its
+quotes: `title: 'Setup'` gives the title `'Setup'`. A colon needs no escaping either,
+since everything after the first `title:` is the title.
 
 **Preserve every key, even when its value is empty**: the format writes them all.
 Keep the block within 15 lines: sync reads at most 15 frontmatter lines and

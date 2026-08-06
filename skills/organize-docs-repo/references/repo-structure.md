@@ -121,6 +121,46 @@ arriving into the basepath is a plain add (a brand-new page), and a file leaving
 it is not registered as a delete by that push (a later full resync reconciles
 the removal).
 
+## Writing canonical YAML
+
+Every YAML file here (`_nav.yaml`, all three `_settings.yaml` levels,
+`developerhub.yaml`, reference sidecars, changelog post frontmatter) is written
+back by one serializer, and it quotes on a fixed rule. Write a value the other way
+and the file still syncs — but the next outbound sweep rewrites the line, so the
+bot lands a formatting-only commit on top of yours. Match it and the file is
+byte-identical to what DeveloperHub would emit.
+
+**Single-quote a value when, and only when, it needs it.** It needs it when the
+value:
+
+- contains a **space** — `title: 'Getting Started'`, `name: 'Version 1'`;
+- contains a **colon** — the `far:` / `fab:` icon prefixes, and every URL:
+  `icon: 'far:bell'`, `url: 'https://status.example.com'`;
+- contains any of `, [ ] { } & * # ?` or a `"`;
+- **starts with** one of `- ? | < > = ! % @` or a backtick (the same characters
+  mid-value are fine: `Welcome!` and `50%off` stay bare);
+- reads as a **number, date or boolean** but is meant as text — `VERSION: '2.0'`,
+  `date: '2026-08-04'`, `title: 'true'`.
+
+Everything else stays bare: `icon: key`, `icon: book-open`, `title: Guide`,
+`locale: en`, `icon: ./logo.png`, and a bare page path. Double quotes appear in one
+case only, a value containing a single quote (`title: "What's new"`).
+
+Booleans and the ordering lists are structure, not text: `published: true` and
+`- guide` are never quoted.
+
+Indentation is canonical too, and it differs by file: **`_nav.yaml` nests by two
+spaces; every settings file nests by four** (the `documentations:` / `references:`
+lists, the `variables:` map). Same rule as quoting — the wrong width still parses,
+it just gets rewritten.
+
+**Page frontmatter is the exception: never quote there.** A `.md` page's `---`
+block is not parsed as YAML but as a fixed-key line format, and single quotes would
+be read as part of the value (`title: 'Setup'` becomes the title `'Setup'`). Write
+`title: Setup: the basics` bare — and note the parser keeps everything after the
+first colon, so a colon in a page title is safe unquoted. Changelog post
+frontmatter is real YAML and follows the quoting rule above.
+
 ## Versions
 
 A version is a top-level folder. **The folder name is the version slug** and is
@@ -131,13 +171,13 @@ folder name still wins.
 `{version}/_settings.yaml`:
 
 ```yaml
-name: Version 1
+name: 'Version 1'
 published: true
 documentations:
-  - guide
-  - api
+    - guide
+    - api
 references:
-  - petstore
+    - petstore
 ```
 
 | Key | Type | Meaning |
@@ -168,7 +208,7 @@ documentation slug.**
 ```yaml
 title: Guide
 published: true
-description: Everything you need to get started.
+description: 'Everything you need to get started.'
 collapsed: false
 collapsedCategories: false
 showLastUpdated: true
@@ -278,12 +318,12 @@ items:
   - label: Resources           # a bare heading (no page, no children rendered under it as a group)
   - separator                  # a divider line
   - link:                      # an external link in the sidebar
-      title: API status
-      url: https://status.example.com
+      title: 'API status'      # quoted: it has a space (see "Writing canonical YAML")
+      url: 'https://status.example.com'
   - page: authentication       # an entry with a sidebar icon
     icon: key
   - category: Guides
-    icon: https://assets.example.com/guides.svg
+    icon: 'https://assets.example.com/guides.svg'
 ```
 
 Entry forms (the writer emits exactly one form per node; the parser accepts these):
@@ -308,13 +348,13 @@ items:
   - page: authentication
     icon: key                          # a bare name is the SOLID style
   - category: Guides
-    icon: far:folder-open              # far: = regular
+    icon: 'far:folder-open'            # far: = regular (quoted: it has a colon)
   - label: Resources
     icon: tag
   - link:
-      title: Source on GitHub
-      url: https://github.com/acme/docs
-    icon: fab:github                    # fab: = brands
+      title: 'Source on GitHub'
+      url: 'https://github.com/acme/docs'
+    icon: 'fab:github'                 # fab: = brands
 ```
 
 - The value is either a **FontAwesome icon token** or the **absolute `http(s)` URL of
@@ -331,6 +371,11 @@ items:
 
 - **Solid is bare and only bare.** There is no `fas:` prefix, so one icon has exactly
   one spelling and `_nav.yaml` diffs stay stable.
+- **Quote a prefixed or URL value, leave a bare name unquoted.** `far:`/`fab:` tokens
+  and image URLs contain a colon, so the serializer writes them single-quoted
+  (`icon: 'far:bell'`, `icon: 'https://…/x.svg'`) while a solid name stays plain
+  (`icon: key`). Both forms parse, but the unquoted prefixed form is not the canonical
+  one and the next outbound sweep rewrites the line. See "Writing canonical YAML".
 - **Anything else is rejected**, with a `nav_icon_invalid` warning, and the entry
   syncs with no icon. Relative image paths, protocol-relative `//host/x.svg`, raw
   FontAwesome classes (`fas fa-key`), `fas:rocket`, and unknown styles (`fal:bell`,
@@ -391,10 +436,10 @@ The file-owned key list is deliberately small; every key here is a permanent
 round-trip promise.
 
 ```yaml
-title: My Product Docs
+title: 'My Product Docs'
 variables:
-  PRODUCT: DeveloperHub
-  VERSION: '2.0'
+    PRODUCT: DeveloperHub
+    VERSION: '2.0'
 ```
 
 | Key | Type | Meaning |
@@ -455,8 +500,8 @@ Each reference is two files at exactly depth 3:
 
 ```yaml
 # petstore.settings.yaml
-title: Petstore API
-description: The Petstore reference.
+title: 'Petstore API'
+description: 'The Petstore reference.'
 published: true
 downloadable: true
 expandable: true
@@ -464,6 +509,7 @@ showContentType: true
 showAccept: true
 showTryItOut: true
 indexCollapsible: false
+perEndpointLayout: false
 showOAuth2: true
 showRequestPayloadOnly: false
 dontCapitalizeTags: false
@@ -480,6 +526,7 @@ dontCapitalizeTags: false
 | `showAccept` | bool | Show the Accept control. |
 | `showTryItOut` | bool | Show the "try it out" control. |
 | `indexCollapsible` | bool | Sidebar index is collapsible. |
+| `perEndpointLayout` | bool | One endpoint per page instead of a single scrolling reference (overrides `expandable`). |
 | `showOAuth2` | bool | Show OAuth2 controls. |
 | `showRequestPayloadOnly` | bool | Show request payload only. |
 | `dontCapitalizeTags` | bool | Do not auto-capitalize tag names. |
@@ -550,8 +597,9 @@ edit that only touches the body is safe. An unrecognised key is reported
 filename, never from frontmatter. A post committed with **no `date:`** is dated when
 the sync runs (`changelog_date_missing` warns), which is rarely what you want for a
 backdated entry. On the way out DeveloperHub writes `YYYY-MM-DD` when the time is
-midnight and `YYYY-MM-DD HH:MM:SS` otherwise, so a hand-written plain date stays as
-you wrote it.
+midnight and `YYYY-MM-DD HH:MM:SS` otherwise, so a hand-written plain date keeps its
+shape. Write it quoted (`date: '2026-08-04'`): a date reads as a timestamp, so the
+serializer quotes it.
 
 There is **no ordering file** for a changelog: no `_nav.yaml`, and no list in any
 settings file. Dates are the whole ordering model.
@@ -559,8 +607,8 @@ settings file. Dates are the whole ordering model.
 ### `changelogs/{changelog}/_settings.yaml`
 
 ```yaml
-title: Product updates
-description: What shipped, and when.
+title: 'Product updates'
+description: 'What shipped, and when.'
 published: true
 ```
 

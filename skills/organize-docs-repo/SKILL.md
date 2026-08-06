@@ -1,7 +1,7 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.5"
+  version: "1.6"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
@@ -110,6 +110,31 @@ A project can also be rooted at a configured subdirectory of a larger repository
 then relative to that folder, `developerhub.yaml` included; anything outside it
 is out of scope entirely.
 
+## Writing canonical YAML
+
+DeveloperHub writes back every YAML file in the repo through one serializer, so a
+value has exactly one canonical spelling. Write it another way and it still syncs,
+but the next sync rewrites the line and the bot lands a formatting-only commit on
+top of yours.
+
+**Single-quote a value that contains a space or a colon, or that reads as a number,
+date or boolean but is meant as text. Otherwise leave it bare** (a handful of other
+characters force quotes too; the reference has the exact rule):
+
+```yaml
+name: 'Version 1'             # a space
+icon: 'far:bell'              # a colon: so every far:/fab: token and every URL
+VERSION: '2.0'                # would otherwise read as a number
+title: Guide                  # one plain word: no quotes
+published: true               # a real boolean: never quoted
+```
+
+Indentation is canonical too: **`_nav.yaml` nests by two spaces, settings files by
+four.** The one exception to all of this is **page frontmatter, which is not YAML**
+and must never be quoted (the quotes would land inside the title); a colon in a page
+title is safe there unquoted. Changelog post frontmatter *is* YAML and follows the
+rule above.
+
 ## Navigation: `_nav.yaml`
 
 One per documentation. A single `items:` list that sets sidebar order and adds the
@@ -127,17 +152,20 @@ items:
   - label: Resources           # a plain sidebar heading
   - separator                  # a divider
   - link:                      # an external link
-      title: API status
-      url: https://status.example.com
+      title: 'API status'
+      url: 'https://status.example.com'
   - page: authentication       # any entry except a separator can carry an icon
     icon: key
+  - page: webhooks
+    icon: 'far:bell'           # quoted: the value has a colon
 ```
 
 **Icons** are optional and live here, not in frontmatter. Add `icon:` alongside the
 entry's type key on a page, category, label or link. The value is either a
 FontAwesome 7 Free token or the URL of an image. A bare token is the **solid** style
-(`key`, `book-open`); prefix `far:` for regular and `fab:` for brands (`far:bell`,
-`fab:github`). **The name is never validated**, so one that does not exist syncs
+(`key`, `book-open`); prefix `far:` for regular and `fab:` for brands (`'far:bell'`,
+`'fab:github'` — a prefix or a URL puts a colon in the value, so it is quoted, while
+a bare token is not). **The name is never validated**, so one that does not exist syncs
 without a warning and renders as blank space: take it from
 [`references/fontawesome-icons.md`](references/fontawesome-icons.md), the complete
 list of what DeveloperHub can draw, rather than from memory. A page leaf must expand
@@ -249,7 +277,7 @@ broken). Fragments (`#section`) are preserved.
 | Nest a page under a parent page | Put it at `{version}/{doc}/{parent}/{slug}.md`; in `_nav.yaml` make the parent `- page: {parent}` with `items:` listing `{parent}/{slug}`. |
 | Group pages under a category | Leave the files where they are; in `_nav.yaml` add `- category: Title` with the pages as its `items:`. |
 | Add a label / separator / external link | Add `- label: Text`, `- separator`, or a `- link:` block to `_nav.yaml`. |
-| Give a page or category an icon | Add `icon: {name}` beside the entry's type key in `_nav.yaml` (bare = solid, `far:`/`fab:` for regular/brands, or an image URL); expand a page leaf to `- page: {slug}` first. Take the name from [`references/fontawesome-icons.md`](references/fontawesome-icons.md). Remove the line to drop the icon. |
+| Give a page or category an icon | Add `icon: {name}` beside the entry's type key in `_nav.yaml` (bare = solid, `far:`/`fab:` for regular/brands, or an image URL; quote anything with a colon in it); expand a page leaf to `- page: {slug}` first. Take the name from [`references/fontawesome-icons.md`](references/fontawesome-icons.md). Remove the line to drop the icon. |
 | Reorder pages | Reorder the entries in `_nav.yaml` (the folder order is not significant). |
 | Reorder docs / references | Reorder `documentations:` / `references:` in the version `_settings.yaml`. |
 | Hide a page from the index | Set `hidden: true` in its frontmatter (keep it in `_nav.yaml`). |
@@ -307,6 +335,9 @@ The finding codes and their meanings are tabled in the reference.
 - **Only `title` and `variables` are honored in `developerhub.yaml`.** Other keys
   are ignored.
 - **Comments in `_nav.yaml` and settings files are not preserved** across a sync.
+- **Quote a YAML value the way the serializer does** (bare token unquoted, anything
+  with a space or colon single-quoted), or the next sync rewrites the line under you.
+  Page frontmatter is the exception: never quote there.
 - **A Git page has no `slug:` in frontmatter** and gains `audience:` only when
   gated. See [`write-markdoc`](../write-markdoc/SKILL.md) for the frontmatter block
   and the body syntax.
