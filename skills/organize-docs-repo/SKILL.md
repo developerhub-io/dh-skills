@@ -1,14 +1,15 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.6"
+  version: "1.7"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
   the version / documentation / page folder structure; navigation in _nav.yaml;
   version, documentation, or project settings (_settings.yaml, developerhub.yaml);
   images and assets in a synced repo; API reference specs (the refs folder);
-  changelogs and changelog posts (the changelogs folder); adding, moving,
+  changelogs and changelog posts (the changelogs folder); synced block files
+  (the _synced-blocks folder); adding, moving,
   renaming, nesting, grouping, reordering, or hiding pages, categories, versions,
   or documentations in a Git-synced repo; or interpreting and fixing findings from
   the DeveloperHub pull request sync check. Pair with write-markdoc, which covers
@@ -53,6 +54,8 @@ changelogs/                    # RESERVED: changelogs (project-level, not versio
   product-updates/             # a changelog: folder name IS its URL path
     _settings.yaml             # changelog settings
     4-august-2026.md           # a post: filename IS the post slug
+_synced-blocks/                # RESERVED: synced blocks (project-level, not versioned)
+  install-steps.md             # a block: filename IS the block id
 assets/                        # content-addressed images the sync materialized
 README.md   .gitignore         # IGNORED: not ours, left untouched
 ```
@@ -96,6 +99,8 @@ config: **all ignored, silently.** Classification is by file type:
   move it.
 - A `.md` at `changelogs/{changelog}/{slug}.md` is a **changelog post**, never a
   page.
+- A `.md` at `_synced-blocks/{id}.md` is a **synced block**, never a page; one any
+  deeper is unplaceable and warned.
 - An **image** file (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif
   .heic .heif`) anywhere is an **asset**.
 - Recognized config files (`_settings.yaml`, `_nav.yaml`, `developerhub.yaml`, ref
@@ -261,6 +266,31 @@ with its site path** (`[install](/guide/installation)`), not a relative `.md` pa
 — posts keep site hrefs, and a relative link would not resolve. And **posts are not
 draftable**: they only sync on the published branch (see below).
 
+## Synced blocks: `_synced-blocks/`
+
+A synced block is content kept once and shown on many pages, which place it by
+its id (`{% synced id="install-steps" /%}`, see write-markdoc). Blocks belong to
+the **project**, so each is one file at the repo root:
+
+```
+_synced-blocks/install-steps.md   # block id `install-steps`
+```
+
+- **Flat, and the filename is the id.** Exactly `_synced-blocks/{id}.md`. An id
+  starts with a lowercase letter and uses only lowercase letters, numbers and
+  dashes; any other filename is skipped with a warning.
+- **Frontmatter holds `title` and `variables` only**; any other key is ignored with
+  a warning. The body is Markdoc, like a page. `variables:` declares the block's
+  variables and their defaults; write-markdoc's `synced` entry has the syntax.
+- **No rename.** Pages place a block by id, so a renamed file is a deleted block
+  plus a new one, and the sync warns (`synced_block_renamed`). Change `id=` on the
+  pages that place the old id yourself.
+- **Deleting the file archives the block**: it leaves the editor's block picker,
+  and the sync warns when pages still place it. Re-adding the same file restores it.
+- **Live at once, published branch only.** A block has no draft: a change merged
+  into the published branch shows on every page that uses it straight away, and
+  nothing under `_synced-blocks/` applies from a draft branch.
+
 ## Internal links
 
 Link page-to-page with a **relative `.md` path**: `[install](./installation.md)`.
@@ -296,6 +326,9 @@ broken). Fragments (`#section`) are preserved.
 | Reorder posts | Change their `date:` values — that is the only ordering. |
 | Rename a changelog or post | Rename the folder or the `.md` file (both are path-owned). |
 | Delete a post | Delete the `.md`. Soft for 30 days, like a page. |
+| Add or edit a synced block | Create or edit `_synced-blocks/{id}.md`: `title` (and optional `variables:`) frontmatter, Markdoc body. Merged to the published branch, it shows on every page using the block at once. |
+| Rename a synced block | Not possible: add the new file, change `id=` on every page that places the old one, then delete the old file. |
+| Delete a synced block | Delete the `.md` (the block is archived). Remove it from the pages that place it first; the sync warns when any still do. |
 
 Do structural work (nav, settings, renames, new pages, new versions) on the
 **published branch**. An optional draft branch is body-only; changes to structure

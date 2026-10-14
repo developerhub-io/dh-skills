@@ -16,7 +16,7 @@ repository layout around it (folders, navigation, settings, assets, and refs).
 | Skill | Teaches |
 |---|---|
 | [`write-markdoc`](skills/write-markdoc/SKILL.md) | Every DeveloperHub Markdoc block and inline mark, with the exact syntax, attributes, and the dialect rules that keep an edit round-trip-safe. |
-| [`organize-docs-repo`](skills/organize-docs-repo/SKILL.md) | The file and folder layout of a Git-synced DeveloperHub repo: where a page goes, the version/documentation/page structure, `_nav.yaml` navigation, settings files, images and assets, API reference specs, and the pull request sync check. |
+| [`organize-docs-repo`](skills/organize-docs-repo/SKILL.md) | The file and folder layout of a Git-synced DeveloperHub repo: where a page goes, the version/documentation/page structure, `_nav.yaml` navigation, settings files, images and assets, API reference specs, changelogs, synced block files, and the pull request sync check. |
 
 Detailed references:
 [`skills/write-markdoc/references/blocks.md`](skills/write-markdoc/references/blocks.md)

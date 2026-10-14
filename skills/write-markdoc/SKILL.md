@@ -1,7 +1,7 @@
 ---
 name: write-markdoc
 metadata:
-  version: "1.3"
+  version: "1.4"
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub
@@ -81,7 +81,7 @@ Two things have no Markdown equivalent, so they are tags:
 | `code` + fences | block | Multi-language code tabs |
 | ` ```lang ` fence | fence | A single code block |
 | `code-steps` | block | Stepped code walkthrough |
-| `table` / `row` / `cell` | block | Rich table (spans, alignment, backgrounds) |
+| `table` / `row` / `cell` | block | Rich table (spans, alignment, backgrounds, pinned header) |
 | `image` | block | Image, with optional caption |
 | `video` | block | Embedded / raw video |
 | `tabs` / `tab` | block | Tabbed content |
@@ -91,7 +91,7 @@ Two things have no Markdown equivalent, so they are tags:
 | `html` | block | Raw custom HTML |
 | `github-code` | block | Code pulled live from a GitHub URL |
 | `index-list` | block | Auto index of child pages |
-| `synced` | block | Reusable synced block, by id |
+| `synced` | block | Reusable synced block, by id, with its own variable values |
 | `badge` | inline | Small coloured label |
 | `key` | inline | Keyboard key |
 | `icon` | inline | Font Awesome icon (names: [`fontawesome-icons.md`](../organize-docs-repo/references/fontawesome-icons.md)) |
@@ -204,7 +204,7 @@ and {% key key="F1" /%} and {% inline-image url="asset:02grc2jqacve" width=14 /%
 | Show the same code in several languages | `code` with fenced tabs | one fence with mixed code |
 | Walk through code step by step | `code-steps` | a numbered list of fences |
 | A plain table | a GFM pipe table | `{% table %}` markup (pipes are canonical for plain tables) |
-| A table with spans, cell colours, widths, or mixed alignment | `table` / `row` / `cell` | a pipe table (it cannot express these) |
+| A table with spans, cell colours, widths, mixed alignment, or a pinned header row | `table` / `row` / `cell` | a pipe table (it cannot express these) |
 | Group alternative content the reader switches between | `tabs` / `tab` | headings |
 | Collapse optional / long detail | `accordion-group` / `accordion` | `tabs` |
 | A grid of navigation links | `cards` / `card` | a bullet list of links |
@@ -221,7 +221,8 @@ next save.
 - **A plain pipe table is canonical and stays a pipe table.** The `{% table %}`
   form appears only when the table uses something pipes cannot express (spans,
   cell backgrounds, column widths, mixed alignment, multi-block cells, the
-  `auto` layout); such a table comes back expanded into `row` / `cell` markup.
+  `auto` layout, `stickyHeader=true`); such a table comes back expanded into
+  `row` / `cell` markup.
 - **Multi-language code is `{% code %}` wrapping bare fences**, each annotated with
   `{% title="…" %}`. There is **no** `{% tab %}` inside `{% code %}`; that tag is
   only for generic content tabs.
@@ -232,6 +233,10 @@ next save.
   this by hand.
 - **Custom HTML is best kept to a single logical line.** Multi-line *indented* HTML
   in `{% html %}` can lose its indentation on round-trip.
+- **Keep `variables=` on every `{% synced %}` tag** exactly as you found it
+  unless asked to change a value. It holds that placement's values for the
+  block's variables (the same block placed twice can have different ones);
+  dropping it puts that placement back on the block's defaults.
 - **`conditional audience="…"` must name a real project audience.** Omit the
   attribute for public / all-audiences content.
 - **Never invent a tag.** An unrecognised `{% tag %}` renders as nothing, and the

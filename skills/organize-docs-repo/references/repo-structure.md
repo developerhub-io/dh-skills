@@ -37,6 +37,8 @@ changelogs/                    # RESERVED folder: changelogs (project-level)
   product-updates/             # a changelog: folder name IS its URL path
     _settings.yaml             # changelog settings
     4-august-2026.md           # a post: basename IS the post slug
+_synced-blocks/                # RESERVED folder: synced blocks (project-level)
+  install-steps.md             # a block: basename IS the block id
 assets/                        # content-addressed images the sync materialized
   a1b2c3d4e5f6.png
 README.md                      # IGNORED (a root file that is not developerhub.yaml)
@@ -87,8 +89,9 @@ resolves to one of these:
 | `{version}/refs/{slug}.settings.yaml` | Reference sidecar | Yes |
 | `changelogs/{changelog}/{slug}.md` | A changelog post | Yes |
 | `changelogs/{changelog}/_settings.yaml` | Changelog settings | Yes |
+| `_synced-blocks/{id}.md` | A synced block | Yes |
 | Any image file, anywhere (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif .heic .heif`) | An asset | Yes |
-| A `.md` too shallow to place (e.g. `v1/intro.md`, any `.md` under `refs/`, or a `.md` at the wrong depth under `changelogs/`) | Unplaceable content | No, but **warns** so you can move it |
+| A `.md` too shallow to place (e.g. `v1/intro.md`, any `.md` under `refs/`, or a `.md` at the wrong depth under `changelogs/` or `_synced-blocks/`) | Unplaceable content | No, but **warns** so you can move it |
 | Any other root file; any non-image file anywhere else | Ignored | No, silently |
 
 The one warned case is a **misplaced `.md`**: a Markdown file inside the tree but
@@ -108,6 +111,8 @@ Edges worth knowing:
   `_settings.yaml` under it is always changelog settings, never a documentation's
   (they sit at the same depth). A version therefore cannot be named `changelogs`;
   DeveloperHub refuses the name when the version is created or renamed.
+- `_synced-blocks/` is matched at the repo root the same way, and a version slug
+  cannot start with `_`.
 
 ### Basepath
 
@@ -524,7 +529,7 @@ dontCapitalizeTags: false
 | `expandable` | bool | Sections expandable. |
 | `showContentType` | bool | Show the content-type control. |
 | `showAccept` | bool | Show the Accept control. |
-| `showTryItOut` | bool | Show the "try it out" control. |
+| `showTryItOut` | bool | Show the API Playground. |
 | `indexCollapsible` | bool | Sidebar index is collapsible. |
 | `perEndpointLayout` | bool | One endpoint per page instead of a single scrolling reference (overrides `expandable`). |
 | `showOAuth2` | bool | Show OAuth2 controls. |
@@ -639,6 +644,55 @@ both directions).
 Changelogs are **published-branch only**. A post has no draft form in DeveloperHub
 (publishing is the `published` flag), so nothing under `changelogs/` applies from a
 draft branch; commit changelog work to the published branch.
+
+## Synced blocks: `_synced-blocks/`
+
+`_synced-blocks/` at the repo root is a **reserved** folder holding synced blocks:
+content kept once and shown on many pages, each of which places a block by its id
+(`{% synced id="install-steps" /%}`). A block belongs to the **project**, not to a
+version, so the folder sits beside the version folders.
+
+```
+_synced-blocks/
+  install-steps.md
+  beta-warning.md
+```
+
+- **The basename is the block's id**, and it is file-owned: no `id:` key exists.
+  An id starts with a lowercase letter and uses only lowercase letters, numbers
+  and dashes; a file named otherwise is skipped with a warning
+  (`synced_block_id_invalid`).
+- **Blocks do not nest.** A `.md` deeper than `_synced-blocks/{id}.md` is
+  unplaceable and warned. Images under the folder follow the ordinary asset
+  rules; any other non-image file is ignored.
+- **Frontmatter: `title` and `variables` only.** Any other key is ignored with a
+  warning (`synced_block_keys_ignored`). The sync quotes a value with a space in
+  it or one YAML would read as something other than text (`'Acme CLI'`, `'2.1'`,
+  `'true'`), and leaves a plain word bare. `variables:` declares the block's variables with their defaults,
+  and the body uses them; the syntax and its YAML rules are in write-markdoc's
+  `synced` entry. A block with no variables has no `variables:` key.
+
+```markdoc
+---
+title: 'Install steps'
+variables:
+  tool: 'Acme CLI'
+  version: '2.1'
+---
+
+Install {% $tool %} version {% $version %}.
+```
+
+- **No rename.** Pages place a block by id, not by path, so there is no link for
+  the sync to repoint: a renamed file is a deleted block plus a new one, warned as
+  `synced_block_renamed`. To rename, add the new file, change `id=` on every page
+  that places the old one, then delete the old file.
+- **Deleting the file archives the block.** It leaves the editor's block picker,
+  and the sync warns (`synced_block_still_embedded`) when pages still place it.
+  Re-adding a file with the same id restores the archived block.
+- **No draft.** A block has one body, so a change merged into the published branch
+  shows on every page using the block at once. Nothing under `_synced-blocks/`
+  applies from a draft branch.
 
 ## Internal links between pages
 

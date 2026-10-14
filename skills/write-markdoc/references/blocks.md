@@ -149,7 +149,8 @@ Inside `code-steps`, a language fence's `showLineNumbers` defaults to `true`.
 An explicit `row` / `cell` tree. Each cell body is itself block content. A plain
 table serialises as a normal GFM pipe table; this tag form is used when the table
 needs cell spans, backgrounds, column widths, mixed (non-uniform) alignment,
-multi-paragraph cells, a headerless shape, or the fluid `auto` layout.
+multi-paragraph cells, a headerless shape, the fluid `auto` layout, or a pinned
+header row.
 
 ```markdoc
 {% table layout="auto" %}
@@ -177,6 +178,7 @@ int
 | Attr | Type | Default | Values |
 |---|---|---|---|
 | `layout` | enum | `fixed` | `fixed`, `auto` (last column fluid) |
+| `stickyHeader` | boolean | `false` | `true` pins the header row while the table body scrolls |
 
 `row`: no attributes; contains `cell` children only.
 
@@ -364,9 +366,59 @@ file). Self-closing.
 {% synced id="open-block-menu" /%}
 ```
 
+A block can declare variables, and each placement of it can set its own values
+for them with `variables=`, an object of name to string, so the same block
+placed twice on one page can read differently. A name left out, set to `""`, or
+set to only spaces shows the block's default. A name the block does not declare
+is ignored. A value is one line of text of at most 500 characters; a longer one
+is cut, and spaces at either end are dropped. Always quote a value: an unquoted
+number is read as a number first, so `2.10` is stored as `2.1`.
+
+```markdoc
+{% synced id="install-steps" variables={"tool":"Acme Cloud","version":"3.0"} /%}
+```
+
 | Attr | Type | Default |
 |---|---|---|
 | `id` | string | `welcome` |
+| `variables` | object (name → string) | none, so every variable shows its default |
+
+Keep `variables=` exactly as you found it unless you are asked to change a
+value: it is this placement's own values, and dropping it puts the placement
+back on the block's defaults.
+
+In a Git-synced repo the block itself is `_synced-blocks/<id>.md`. Its
+frontmatter declares the variables and their defaults under `variables:`, and
+its body uses them as `{% $name %}` in text and `%name%` inside code. Write
+every value in quotes, as below. (The sync quotes a value with a space in it or
+one YAML would read as something other than text, and leaves a plain word like
+`Acme` bare, so a quoted plain word loses its quotes on the next write back,
+which is harmless.) An unquoted value on its
+name's own line is read as written (`version: 2.10` stays `2.10`) and quoted on
+the next write back. Anywhere else (`variables: {version: 2.10}` on one line or
+several, or the list form `- name: version` with `default: 2.10`) YAML has
+already made a number, boolean or date of an unquoted value, and the file is
+refused until it is quoted:
+
+````markdoc
+---
+title: 'Install steps'
+variables:
+  tool: 'Acme CLI'
+  version: '2.1'
+---
+
+Install {% $tool %} version {% $version %}:
+
+```bash
+npm install acme-cli@%version%
+```
+````
+
+`{% $name %}` means something only inside a block file: written in a page, it
+renders nothing. A name starts with a letter, has 2 to 128 characters, and
+uses only letters, numbers and underscores. A default is one line of text of at
+most 500 characters.
 
 ---
 
