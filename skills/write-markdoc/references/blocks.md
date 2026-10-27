@@ -149,13 +149,13 @@ Inside `code-steps`, a language fence's `showLineNumbers` defaults to `true`.
 An explicit `row` / `cell` tree. Each cell body is itself block content. A plain
 table serialises as a normal GFM pipe table; this tag form is used when the table
 needs cell spans, backgrounds, column widths, mixed (non-uniform) alignment,
-multi-paragraph cells, a headerless shape, the fluid `auto` layout, or a pinned
-header row.
+multi-paragraph cells, a headerless shape, the fluid `auto` layout, a pinned
+header row, or a column readers can search.
 
 ```markdoc
 {% table layout="auto" %}
 {% row %}
-{% cell header=true %}
+{% cell header=true searchable=true %}
 Parameter
 {% /cell %}
 {% cell header=true align="right" %}
@@ -192,6 +192,17 @@ int
 | `colspan` | number | `1` | |
 | `rowspan` | number | `1` | |
 | `colwidth` | number | (none) | column width in px |
+| `searchable` | boolean | `false` | `true` on a header cell lets readers search that column |
+
+`searchable=true` works on a cell in the table's first row, when every cell in
+that row has `header=true`. Anywhere else it is kept on the cell but does
+nothing, and on a cell without `header=true` it is dropped. On the published page
+that header gets a search button: the reader types into it and the table shows
+only the rows whose cell in that column contains every typed word (case and
+accents don't matter). Mark several columns and a row must match each search
+that is open. Like every other boolean here it is bare (`searchable=true`, never
+`searchable="true"`). Write it after the cell's other attributes, where the
+editor writes it back.
 
 > A plain pipe table is canonical and round-trips as a pipe table, uniform
 > per-column alignment included. It is only rewritten into this `{% table %}`

@@ -1,7 +1,7 @@
 {
   "name": "dh-skills",
   "description": "Agent Skills for DeveloperHub: the exact Markdoc syntax for every content block, and the file layout of a Git-synced docs repo.",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "author": {
     "name": "DeveloperHub",
     "email": "hello@developerhub.io"
