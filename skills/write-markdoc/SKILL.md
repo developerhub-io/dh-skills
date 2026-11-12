@@ -1,7 +1,7 @@
 ---
 name: write-markdoc
 metadata:
-  version: "1.5"
+  version: "1.6"
 description: >-
   Write, author, edit, and format DeveloperHub documentation pages in the correct
   Markdoc syntax. Use whenever a task involves creating or editing a DeveloperHub

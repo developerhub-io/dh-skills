@@ -524,7 +524,10 @@ Variables are written in **percent form**, not as a tag:
   digit (`%2fa%` stays literal text).
 - Never echo `%product%` back to a user as literal text, and never replace it in
   source.
-- A `%…%` inside inline code or a code fence stays literal.
+- A `%…%` inside inline code stays literal. Inside a code fence (and code tabs and
+  code steps) it stays as typed in the source, and on the published page a key
+  that is defined is replaced with its value; an undefined one (`%PATH%`) is shown
+  as written.
 - An undefined key shows as `{{key}}` in the editor and renders as empty text on
   the published page.
 

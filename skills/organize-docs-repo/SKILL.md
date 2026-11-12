@@ -1,7 +1,7 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.7"
+  version: "1.8"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
@@ -9,7 +9,9 @@ description: >-
   version, documentation, or project settings (_settings.yaml, developerhub.yaml);
   images and assets in a synced repo; API reference specs (the refs folder);
   changelogs and changelog posts (the changelogs folder); synced block files
-  (the _synced-blocks folder); adding, moving,
+  (the _synced-blocks folder); the reader's look and top navigation as files
+  (logo, favicon, colours, font, custom CSS, HEAD tags, footer, top links: the
+  _theme folder and developerhub.yaml settings and navigation); adding, moving,
   renaming, nesting, grouping, reordering, or hiding pages, categories, versions,
   or documentations in a Git-synced repo; or interpreting and fixing findings from
   the DeveloperHub pull request sync check. Pair with write-markdoc, which covers
@@ -36,7 +38,7 @@ round-trip-safe.
 ## The tree at a glance
 
 ```
-developerhub.yaml              # project settings (title, variables)
+developerhub.yaml              # project settings: title, variables, settings, navigation
 v1/                            # a version: folder name IS the version slug
   _settings.yaml               # version settings + doc/reference order
   guide/                       # a documentation: folder name IS the doc slug
@@ -56,6 +58,8 @@ changelogs/                    # RESERVED: changelogs (project-level, not versio
     4-august-2026.md           # a post: filename IS the post slug
 _synced-blocks/                # RESERVED: synced blocks (project-level, not versioned)
   install-steps.md             # a block: filename IS the block id
+_theme/                        # RESERVED: reader customisation files
+  custom.css   head.html   footer.html   logo.svg   logo-dark.svg   favicon.png
 assets/                        # content-addressed images the sync materialized
 README.md   .gitignore         # IGNORED: not ours, left untouched
 ```
@@ -69,7 +73,8 @@ README.md   .gitignore         # IGNORED: not ours, left untouched
    `slug:` key in a settings file; it is ignored (the path owns the slug). The
    slug is the basename alone, so nesting never deepens a page URL (always
    `/{version}/{doc}/{slug}`) and a basename must be unique within its
-   documentation, even across different parent folders.
+   documentation, even across different parent folders. Slugs hold at most 64
+   characters.
 3. **Parent pages are folders; categories are not.** A page nested under another
    *page* lives in a folder named after that parent page. A *category* is a nav-only
    grouping and never appears as a directory. The parent's own `{parent}.md` must
@@ -80,9 +85,10 @@ README.md   .gitignore         # IGNORED: not ours, left untouched
    else at the root is yours and is ignored.
 6. **Folders become real through content, and arrive unpublished.** A
    documentation exists once it holds a page; a version needs a page or a ref
-   spec (settings for an empty folder just warn). A repo-created version or
-   reference stays unpublished until its settings file says `published: true`.
-   (A changelog is the exception: it exists on its `_settings.yaml` alone, so an
+   spec (settings for an empty folder just warn). A repo-created version,
+   documentation, reference or changelog stays unpublished until its settings file
+   says `published: true`, and a post until its frontmatter does. (A changelog is the
+   exception to the content rule: it exists on its `_settings.yaml` alone, so an
    empty changelog is representable.)
 7. **`changelogs/` at the repo root is reserved.** It holds changelogs, which are
    project-level and sit outside the version tree, so a version can never be named
@@ -90,8 +96,9 @@ README.md   .gitignore         # IGNORED: not ours, left untouched
 
 ## Scope: what is managed vs ignored
 
-DeveloperHub manages `developerhub.yaml` and the version/documentation folders it
-implies. A real repo also has a README, a LICENSE, `.gitignore`, lockfiles, CI
+DeveloperHub manages `developerhub.yaml`, the version/documentation folders it
+implies, and the reserved root folders `changelogs/`, `_synced-blocks/` and
+`_theme/`. A real repo also has a README, a LICENSE, `.gitignore`, lockfiles, CI
 config: **all ignored, silently.** Classification is by file type:
 
 - A `.md` at valid depth is a **page**; a `.md` too shallow (or under `refs/`, or
@@ -104,7 +111,7 @@ config: **all ignored, silently.** Classification is by file type:
 - An **image** file (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif
   .heic .heif`) anywhere is an **asset**.
 - Recognized config files (`_settings.yaml`, `_nav.yaml`, `developerhub.yaml`, ref
-  specs and sidecars) are handled by name and depth.
+  specs and sidecars, and the `_theme/` files) are handled by name and depth.
 - Anything else (any other root file, any non-image file elsewhere) is **ignored**.
 
 So a stray `.gitignore` or `data.csv` is never treated as content or force-uploaded
@@ -134,8 +141,8 @@ title: Guide                  # one plain word: no quotes
 published: true               # a real boolean: never quoted
 ```
 
-Indentation is canonical too: **`_nav.yaml` nests by two spaces, settings files by
-four.** The one exception to all of this is **page frontmatter, which is not YAML**
+Indentation is canonical too: **every YAML file nests by two spaces**, list dashes
+included (`documentations:` then `  - guide`). The one exception to all of this is **page frontmatter, which is not YAML**
 and must never be quoted (the quotes would land inside the title); a colon in a page
 title is safe there unquoted. Changelog post frontmatter *is* YAML and follows the
 rule above.
@@ -192,14 +199,16 @@ hand-formatting are lost** on sync.
 
 Three kinds, each authoritative for its level. Full key tables in the reference.
 
-- **`developerhub.yaml`** (root): only `title` and `variables` (the `%VAR%` map) are
-  file-owned. Never put secrets in `variables` (they render into public docs). Any
-  other key is app-owned and ignored.
+- **`developerhub.yaml`** (root): `title`, `variables` (the `%VAR%` map), `settings`
+  (how the reader looks) and `navigation` (top links and navigation groups); see
+  [Reader customisation](#reader-customisation). Never put secrets in `variables`
+  (they render into public docs). Any other key is app-owned and ignored.
 - **`{version}/_settings.yaml`**: `name`, `published`, plus the order lists
   `documentations:` and `references:`.
 - **`{version}/{doc}/_settings.yaml`**: `title`, `published`, `description`,
   `collapsed`, `collapsedCategories`, `showLastUpdated`, `showLastUpdateUser`,
-  `locale`.
+  `locale` (the reader interface language: `en_us`, `en_gb`, `fr_fr`, `de`, `es`
+  or `pt_br`).
 
 Ownership: a key is **file-owned** (round-trips), **app-owned** (managed in the UI,
 ignored if written here, with a `settings_keys_ignored` warning), or
@@ -209,7 +218,7 @@ key does nothing.
 ## Images
 
 In the repo, reference an image by **relative path**, not an `asset:` token:
-`![alt](./logo.png)`, `{% image url="../assets/abc123.png" %}`, or `{% inline-image
+`![alt](./logo.png)`, `{% image url="../assets/abc123.png" /%}`, or `{% inline-image
 url="./icon.png" /%}`. Commit an image next to its page and it is used in place;
 otherwise the sync stores it content-addressed under top-level `assets/`. External
 URLs and data URIs are left as written. Non-image files are never uploaded.
@@ -287,9 +296,53 @@ _synced-blocks/install-steps.md   # block id `install-steps`
   pages that place the old id yourself.
 - **Deleting the file archives the block**: it leaves the editor's block picker,
   and the sync warns when pages still place it. Re-adding the same file restores it.
+- **Links in a block are site paths** (`[install](/guide/installation)`), as in a
+  changelog post: the sync leaves them as written, so a relative `.md` link would not
+  resolve. Images are relative paths as usual.
 - **Live at once, published branch only.** A block has no draft: a change merged
   into the published branch shows on every page that uses it straight away, and
   nothing under `_synced-blocks/` applies from a draft branch.
+
+## Reader customisation
+
+How the published docs look is synced too: values in `developerhub.yaml`, files in
+`_theme/`.
+
+```yaml
+settings:
+  darkMode: auto              # true (dark), false (light) or auto (the reader's system)
+  mainColour: '5368e7'        # hex, quoted: unquoted it reads as a number
+  linkColour: ff536b
+  fontFamily: Inter           # a Google Fonts family
+navigation:
+  openLinksNewTab: true
+  logoUrl: 'https://acme.dev'
+  links:                      # the top navigation, at most four
+    - title: Pricing
+      url: 'https://acme.dev/pricing'
+  groups:                     # navigation groups of sections
+    - title: Guides
+      icon: rocket
+      sections: [guide, tutorials]
+```
+
+`settings:` also takes `uiVersion` (layout `1`, `2` or `3`), `showThemeToggle`,
+`lightCodeTheme`, `stickyTopnav`, `transparentTopnav`, `fullWidthFooter`,
+`navLinkColour` and `inlineCodeColour`; the reference has the defaults. Keys are
+present-only, but `links` and `groups` are the whole set when present: delete an
+entry to delete the link or group. Write colours as lowercase hex without `#`, and
+quote one that YAML would read as a number (all digits, or digits with an `e`, like
+`'5368e7'`); leave the rest bare. A bare `#5368e7` is a YAML comment and silently
+resets the colour, and uppercase is rewritten to lowercase on the next sync. A
+value DeveloperHub cannot use is reset to its default with a warning.
+
+`_theme/` holds exactly `custom.css`, `head.html` (HEAD tags), `footer.html`, and the
+images `logo.{ext}`, `logo-dark.{ext}` and `favicon.{ext}` (png, jpg, gif, webp, svg,
+bmp, ico or avif; one file per stem). An absent file means the default, and **deleting one clears it at
+once** (no 30-day grace here). The files write the live site, so a merge is the
+publish (an admin viewing the live docs while the settings pane holds an unpublished
+CSS or HEAD-tags draft still sees the draft). Any other file in `_theme/` is ignored silently. Custom CSS, HEAD tags and
+the footer are plan features.
 
 ## Internal links
 
@@ -317,7 +370,7 @@ broken). Fragments (`#section`) are preserved.
 | Delete a page | Delete the `.md` and its `_nav.yaml` entry. Deletes are soft for 30 days; re-adding the same path revives the same page. |
 | Un-gate an audience page | Set `audience:` to empty in its frontmatter (deleting the line changes nothing). |
 | Add a version | Create `{version}/` with a `_settings.yaml` plus at least one page or ref spec; it stays unpublished until `published: true`. |
-| Add a documentation | Create `{version}/{doc}/` with `_settings.yaml`, `_nav.yaml`, and its first page (an empty folder does not sync); list it in the version's `documentations:`. |
+| Add a documentation | Create `{version}/{doc}/` with `_settings.yaml` (with `published: true`, or it stays unpublished), `_nav.yaml`, and its first page (an empty folder does not sync); list it in the version's `documentations:`. |
 | Add an image | Commit it next to the page (or anywhere) and reference it by relative path. |
 | Add an API reference | Commit the spec at `{version}/refs/{slug}.{yaml\|json}` and a `{slug}.settings.yaml`; list `{slug}` in the version's `references:`. |
 | Add a changelog | Create `changelogs/{path}/_settings.yaml` (that alone is enough; posts can come later). |
@@ -329,6 +382,11 @@ broken). Fragments (`#section`) are preserved.
 | Add or edit a synced block | Create or edit `_synced-blocks/{id}.md`: `title` (and optional `variables:`) frontmatter, Markdoc body. Merged to the published branch, it shows on every page using the block at once. |
 | Rename a synced block | Not possible: add the new file, change `id=` on every page that places the old one, then delete the old file. |
 | Delete a synced block | Delete the `.md` (the block is archived). Remove it from the pages that place it first; the sync warns when any still do. |
+| Change the logo, dark logo or favicon | Commit the image as `_theme/logo.{ext}`, `_theme/logo-dark.{ext}` or `_theme/favicon.{ext}` (delete any other extension of the same file). Delete the file to go back to the default. |
+| Change colours, font, dark mode or layout | Edit `settings:` in `developerhub.yaml`; colours as lowercase hex, quoted only when they read as a number (`'5368e7'`, `'333333'`). |
+| Change the top navigation links | Edit `navigation.links` in `developerhub.yaml` (at most four, each `title` + `url`). |
+| Group sections in the top navigation | Edit `navigation.groups`: a `title`, optional `icon`, and the `sections` slugs. |
+| Change custom CSS, HEAD tags or footer | Edit `_theme/custom.css`, `_theme/head.html` or `_theme/footer.html`. |
 
 Do structural work (nav, settings, renames, new pages, new versions) on the
 **published branch**. An optional draft branch is body-only; changes to structure
@@ -365,8 +423,11 @@ The finding codes and their meanings are tabled in the reference.
 - **Categories never become folders**; parent pages always do.
 - **Hidden ≠ unlisted.** `hidden:` controls the auto-index; `listed:` controls the
   sidebar; nav absence is not how you hide a page.
-- **Only `title` and `variables` are honored in `developerhub.yaml`.** Other keys
-  are ignored.
+- **`developerhub.yaml` reads only `title`, `variables`, `settings` and
+  `navigation`.** Other keys are ignored. Inside `navigation`, `links` and `groups`
+  replace the whole set when present.
+- **Deleting a `_theme/` file clears that customisation immediately**, unlike page
+  and folder deletes.
 - **Comments in `_nav.yaml` and settings files are not preserved** across a sync.
 - **Quote a YAML value the way the serializer does** (bare token unquoted, anything
   with a space or colon single-quoted), or the next sync rewrites the line under you.

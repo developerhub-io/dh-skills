@@ -18,7 +18,7 @@ Emit a shape the serializer would not produce and the next save rewrites it.
 ## The tree
 
 ```
-developerhub.yaml              # project settings (title, variables)
+developerhub.yaml              # project settings: title, variables, settings, navigation
 v1/                            # a version: folder name IS the version slug
   _settings.yaml               # version settings + documentation/reference order
   guide/                       # a documentation: folder name IS the doc slug
@@ -39,6 +39,13 @@ changelogs/                    # RESERVED folder: changelogs (project-level)
     4-august-2026.md           # a post: basename IS the post slug
 _synced-blocks/                # RESERVED folder: synced blocks (project-level)
   install-steps.md             # a block: basename IS the block id
+_theme/                        # RESERVED folder: reader customisation files
+  custom.css                   # custom CSS
+  head.html                    # custom HEAD tags
+  footer.html                  # custom footer
+  logo.svg                     # logo (any image extension)
+  logo-dark.svg                # logo for dark backgrounds
+  favicon.png                  # favicon
 assets/                        # content-addressed images the sync materialized
   a1b2c3d4e5f6.png
 README.md                      # IGNORED (a root file that is not developerhub.yaml)
@@ -61,6 +68,8 @@ Config files sit at fixed depths; pages nest as deep as their parent chain goes:
 | 2 | `changelogs/` | The reserved changelogs folder (project-level, not a version) |
 | 3 | `changelogs/product-updates/_settings.yaml` | Changelog settings |
 | 3 | `changelogs/product-updates/4-august-2026.md` | A changelog post (exactly depth 3; posts do not nest) |
+| 2 | `_synced-blocks/install-steps.md` | A synced block |
+| 2 | `_theme/custom.css`, `_theme/logo.svg`, … | A reader customisation file |
 
 Page nesting is unbounded, but it never deepens the URL: a page's address stays
 `/{version}/{doc}/{slug}` however deep the file sits, because the slug is the
@@ -69,9 +78,9 @@ documentation, even across different parent folders.
 
 ## Scope: what DeveloperHub manages, and what it ignores
 
-DeveloperHub manages exactly two things: `developerhub.yaml` at the repo root, and
-the version/documentation folders it implies. **Everything else is ignored,
-silently.** A real repository is full of files DeveloperHub neither owns nor
+DeveloperHub manages `developerhub.yaml` at the repo root, the version and
+documentation folders, and the reserved root folders `changelogs/`,
+`_synced-blocks/` and `_theme/`. **Everything else is ignored, silently.** A real repository is full of files DeveloperHub neither owns nor
 understands (Git and tool config, a README, a LICENSE, lockfiles, CI workflows),
 and none of them should be mistaken for content.
 
@@ -90,6 +99,8 @@ resolves to one of these:
 | `changelogs/{changelog}/{slug}.md` | A changelog post | Yes |
 | `changelogs/{changelog}/_settings.yaml` | Changelog settings | Yes |
 | `_synced-blocks/{id}.md` | A synced block | Yes |
+| `_theme/custom.css`, `_theme/head.html`, `_theme/footer.html`, `_theme/{logo\|logo-dark\|favicon}.{image ext}` | Reader customisation | Yes |
+| Any other file under `_theme/` | Ignored (an image there is still an asset) | No |
 | Any image file, anywhere (`.png .jpg .jpeg .gif .webp .svg .bmp .ico .tif .tiff .avif .heic .heif`) | An asset | Yes |
 | A `.md` too shallow to place (e.g. `v1/intro.md`, any `.md` under `refs/`, or a `.md` at the wrong depth under `changelogs/` or `_synced-blocks/`) | Unplaceable content | No, but **warns** so you can move it |
 | Any other root file; any non-image file anywhere else | Ignored | No, silently |
@@ -148,16 +159,18 @@ value:
   `date: '2026-08-04'`, `title: 'true'`.
 
 Everything else stays bare: `icon: key`, `icon: book-open`, `title: Guide`,
-`locale: en`, `icon: ./logo.png`, and a bare page path. Double quotes appear in one
+`locale: en_us`, `icon: ./logo.png`, and a bare page path. Double quotes appear in one
 case only, a value containing a single quote (`title: "What's new"`).
 
 Booleans and the ordering lists are structure, not text: `published: true` and
 `- guide` are never quoted.
 
-Indentation is canonical too, and it differs by file: **`_nav.yaml` nests by two
-spaces; every settings file nests by four** (the `documentations:` / `references:`
-lists, the `variables:` map). Same rule as quoting — the wrong width still parses,
-it just gets rewritten.
+Indentation is canonical too: **every YAML file nests by two spaces**, list dashes
+included (`documentations:` then `  - guide`; `items:` then `  - intro`), and a
+mapping inside a list hugs its dash (`- title: Pricing`, its next key two spaces
+in). One writer emits every one of these files, so the rule is the same for
+`_nav.yaml`, all the settings files, sidecars and frontmatter. Same rule as quoting:
+the wrong width still parses, it just gets rewritten.
 
 **Page frontmatter is the exception: never quote there.** A `.md` page's `---`
 block is not parsed as YAML but as a fixed-key line format, and single quotes would
@@ -179,10 +192,10 @@ folder name still wins.
 name: 'Version 1'
 published: true
 documentations:
-    - guide
-    - api
+  - guide
+  - api
 references:
-    - petstore
+  - petstore
 ```
 
 | Key | Type | Meaning |
@@ -218,7 +231,7 @@ collapsed: false
 collapsedCategories: false
 showLastUpdated: true
 showLastUpdateUser: false
-locale: en
+locale: en_us
 ```
 
 | Key | Type | Meaning |
@@ -230,7 +243,7 @@ locale: en
 | `collapsedCategories` | bool | Categories are expandable/collapsible. |
 | `showLastUpdated` | bool | Show each page's last-updated date. |
 | `showLastUpdateUser` | bool | Show who last updated each page. |
-| `locale` | string | Language/locale code. |
+| `locale` | string | The language of the reader interface for this documentation: `en_us` (the default), `en_gb`, `fr_fr`, `de`, `es` or `pt_br`. |
 
 `slug` is never written (the folder owns it). Page **order and grouping** are not
 here: they live in `_nav.yaml`.
@@ -436,26 +449,124 @@ Rules:
 
 ## Project settings: `developerhub.yaml`
 
-The repo-root `developerhub.yaml` carries project-level, content-shaped config.
-The file-owned key list is deliberately small; every key here is a permanent
-round-trip promise.
+The repo-root `developerhub.yaml` carries project-level config in four keys. Every
+key here is a permanent round-trip promise.
 
 ```yaml
-title: 'My Product Docs'
+title: 'Acme Docs'
 variables:
-    PRODUCT: DeveloperHub
-    VERSION: '2.0'
+  PRODUCT: Acme
+  VERSION: '2.0'
+settings:
+  uiVersion: 3
+  darkMode: auto
+  showThemeToggle: true
+  mainColour: '5368e7'
+  linkColour: ff536b
+  fontFamily: Inter
+navigation:
+  openLinksNewTab: true
+  logoUrl: 'https://acme.dev'
+  links:
+    - title: Pricing
+      url: 'https://acme.dev/pricing'
+  groups:
+    - title: Guides
+      icon: rocket
+      sections: [guide, tutorials]
 ```
 
 | Key | Type | Meaning |
 |---|---|---|
 | `title` | string | Project title. A blank/non-string value is ignored. |
 | `variables` | map | The `%VAR%` substitution map used in page bodies. A map sets it as declared; a bare `variables:` (or empty map) clears it; absent leaves it untouched. Never put secrets here (variables render into public docs). |
+| `settings` | map | How the reader looks (below). |
+| `navigation` | map | The reader's top navigation (below). |
 
-Any other key is **app-owned** (security and operational config, secrets, and
-everything not in the list above). Unknown keys are returned as a
-`settings_keys_ignored` warning, never half-applied. Do not add keys hoping they
-take effect: only `title` and `variables` are honored.
+Every key is **present-only**: a key that is absent leaves the project as it is.
+The sync writes every setting that has a value and leaves out the unset ones (an
+automatic colour, no font, no logo link, an empty top link). Inside `navigation`, `links` and `groups` are the exception: when
+present they are the whole set (see below).
+
+Any other key is **app-owned** (security and operational config, secrets, the
+custom domain, access control). Unknown keys come back as a
+`settings_keys_ignored` warning, never half-applied.
+
+### `settings:`
+
+| Key | Values | Default |
+|---|---|---|
+| `uiVersion` | the reader layout: `1` (Original), `2` (Next), `3` (Matcha) | `3` |
+| `darkMode` | `true` (dark), `false` (light), or `auto` (each reader's system setting); `dark`, `light` and `system` are read too | `auto` |
+| `showThemeToggle` | `true` / `false`: show the light/dark switch | `true` |
+| `lightCodeTheme` | `true` / `false`: light code blocks | `false` |
+| `stickyTopnav` | `true` / `false` | `false` |
+| `transparentTopnav` | `true` / `false`: the Matcha top bar takes the page colour instead of the brand colour | `true` for new projects (an unusable value falls back to `false`) |
+| `fullWidthFooter` | `true` / `false` | `false` |
+| `mainColour` | the brand colour as hex without `#` (a quoted `'#5368e7'` is read too); 3-digit shorthand is expanded | `353535` |
+| `linkColour` | link colour, same form | `ff5da2` |
+| `navLinkColour` | top-navigation link colour, same form; empty = automatic | automatic |
+| `inlineCodeColour` | inline code colour, same form; empty = automatic | automatic |
+| `fontFamily` | a Google Fonts family name (`Inter`, `Source Sans 3`) | the layout's font |
+
+**Quote colours that need it.** Write a colour as lowercase hex, without `#`: the
+sync stores and writes it that way, so `5368E7` or `#5368e7` comes back rewritten.
+Uppercase is also a trap of its own: `5368E7` reads as a number just like `5368e7`. Single-quote it when YAML would read it as a number,
+that is when it is all digits (`'333333'`) or digits with one `e` among them
+(`'5368e7'`, scientific notation); leave the rest bare (`linkColour: ff536b`), which
+is exactly how the sync writes them back. Never write a bare `#`: in YAML,
+`mainColour: #5368e7` is a comment, so the value is empty and the colour silently
+goes back to the default, with no warning. A value DeveloperHub cannot use (a colour
+that is not a colour, a layout that does not exist) is reset to its default and
+reported as a warning, never stored.
+
+### `navigation:`
+
+| Key | Values |
+|---|---|
+| `openLinksNewTab` | `true` / `false`: top navigation links open in a new tab |
+| `logoUrl` | where the logo links to; empty = the landing page |
+| `links` | the top navigation links, in order, each a `title` and a `url`: at most **four** (more are dropped with a warning) |
+| `groups` | navigation groups: each a `title`, an optional `icon` (a FontAwesome token or an image URL, as in `_nav.yaml`), and `sections`, the documentation and API reference slugs it holds, and changelogs by their path |
+
+`links` and `groups` are **declarative when present**: the list is the whole set, so
+deleting an entry deletes it, an empty list clears them all, and a missing key leaves
+them alone. Groups are matched by `title` (there are no ids in the repo), so renaming
+a group's title replaces it. A group entry with no `icon:` clears an icon set in the
+editor. `sections` is written in flow style (`[guide, tutorials]`).
+
+## Reader customisation: `_theme/`
+
+`_theme/` at the repo root is reserved for the parts of the reader's look that are
+files rather than values. Exactly these, at depth 2:
+
+| File | Holds |
+|---|---|
+| `_theme/custom.css` | custom CSS |
+| `_theme/head.html` | custom HEAD tags (scripts and meta tags on every page) |
+| `_theme/footer.html` | the custom footer |
+| `_theme/logo.{ext}` | the logo |
+| `_theme/logo-dark.{ext}` | the logo on dark backgrounds |
+| `_theme/favicon.{ext}` | the favicon |
+
+The images are real image files with any of `png jpg jpeg gif webp svg bmp ico avif`;
+the stem decides what the file is, so `logo.svg` and `logo.png` are both the logo
+(commit one, not both). The text files are applied verbatim, so `custom.css` diffs and
+lints like any stylesheet.
+
+- **Absent means default.** A project on the stock logo has no `logo` file, and the
+  sync does not write files for settings left at their defaults.
+- **Deleting a file clears that customisation outright**, unlike deletes elsewhere
+  in the sync (which are soft for 30 days).
+- **A push is the publish.** The files write the live CSS, HEAD tags and footer, not
+  the drafts the settings pane previews; review them in a pull request instead. One
+  catch when checking a push: custom CSS and HEAD tags have drafts (the footer does
+  not), and while one is unpublished, an admin viewing the live docs sees the draft,
+  not the pushed file. Check with **View as Reader** or a private window, or publish
+  or discard the draft.
+- Custom CSS, HEAD tags and the custom footer are plan features.
+- Any other file under `_theme/` is ignored silently (an image there is an ordinary
+  asset), so a misspelt name such as `_theme/styles.css` simply does nothing.
 
 ## Images and assets
 
@@ -465,7 +576,7 @@ between the two so a clone is self-contained.) Three image forms are rewritten i
 both directions:
 
 - Markdown: `![alt](./logo.png)`
-- Block tag: `{% image url="../assets/a1b2c3d4e5f6.png" %}`
+- Block tag: `{% image url="../assets/a1b2c3d4e5f6.png" /%}`
 - Inline tag: `{% inline-image url="./icon.png" /%}`
 
 Where the bytes live:
@@ -787,6 +898,12 @@ and the key round-trips forever) or **app-owned** (managed in the DeveloperHub U
 never read from the repo). Security and operational config and secrets are
 app-owned by policy. Writing an app-owned key into a settings file does nothing but
 produce a `settings_keys_ignored` warning: it is never half-applied.
+
+File-owned today: everything in `developerhub.yaml`'s four keys, every
+`_settings.yaml`, `_nav.yaml`, reference sidecar and changelog setting, and the
+`_theme/` files. App-owned: the custom domain, access control and reader login,
+integrations and secrets, the draft CSS and HEAD tags the settings pane previews, and
+the organisation-level CSS, HEAD tags and footer.
 
 A special third case is **directory-owned**: the `slug` of a version, documentation,
 or reference is owned by the folder or filename, never by a `slug:` key. Renames
