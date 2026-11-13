@@ -1,10 +1,12 @@
 {
   "name": "dh-skills",
+  "displayName": "DeveloperHub",
   "description": "Agent Skills for DeveloperHub: the exact Markdoc syntax for every content block, the file layout of a Git-synced docs repo, and migrating existing docs to DeveloperHub.",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "author": {
     "name": "DeveloperHub",
-    "email": "hello@developerhub.io"
+    "email": "hello@developerhub.io",
+    "url": "https://developerhub.io"
   },
   "homepage": "https://developerhub.io",
   "repository": "https://github.com/developerhub-io/dh-skills",

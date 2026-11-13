@@ -73,6 +73,21 @@ Cursor, Codex, and other compatible agents.
 It is also published to npm as `@developerhub/dh-skills`, for anyone who prefers to
 vendor the files as a dependency (`npm install @developerhub/dh-skills`).
 
+## What the plugin runs and sends
+
+The skills are instructions and reference files. Installing the plugin adds no hooks,
+no MCP servers and no background processes, and the plugin itself sends nothing
+anywhere.
+
+- `check-migration.mjs` runs on your machine only when the agent validates a migrated
+  folder. It reads the folder you pass it, prints a report, writes no files and makes
+  no network requests.
+- `migrate-docs` reads the docs you point it at: a local folder, a Git repository it
+  clones with `git clone`, or an export archive. When the only source is a published
+  docs site, it first asks whether a repository or export exists, and only then fetches
+  that site's pages. The result is a local folder; nothing is uploaded to DeveloperHub
+  until you import it yourself with GitHub Sync.
+
 ## Contributing
 
 This package is published and maintained by DeveloperHub. Spotted an error, or
