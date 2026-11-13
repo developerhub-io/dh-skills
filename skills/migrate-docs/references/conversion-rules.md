@@ -348,7 +348,7 @@ block.
 - **Static values** (`{{ product_name }}` in mkdocs-macros, Sphinx `|product|`
   substitutions, Jekyll `site.*` values, Writerside `%var%`, Antora `{attribute}`,
   Hugo site params, Mintlify or Docusaurus constants imported into MDX) →
-  `%KEY%` in the page and the value under `variables:` in `developerhub.yaml`. A key
+  `%name%` in the page and the value under `variables:` in `developerhub.yaml`. A key
   uses only letters, digits and `_` (dotted for nested values); a dash makes
   `%my-key%` plain text, so rename `my-key` to `my_key`.
 - **Reader-specific values** (ReadMe `<<apiKey>>`, `<<user>>`): ask. DeveloperHub
@@ -358,9 +358,9 @@ block.
   it the way the published site showed it, as static content. Audience-specific
   content becomes `{% conditional audience="…" %}` once the customer has created
   that audience in the app; until then, keep it unconditional and list it.
-- Inside code fences, a `%KEY%` that is defined in `developerhub.yaml` is replaced
+- Inside code fences, a `%name%` that is defined in `developerhub.yaml` is replaced
   on the published page, and an undefined one stays as typed. So code that used the
-  old tool's substitution can use `%KEY%` too. Inline code is never substituted.
+  old tool's substitution can use `%name%` too. Inline code is never substituted.
 
 ## Math
 

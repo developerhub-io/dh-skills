@@ -45,9 +45,9 @@ function usage(code) {
 const findings = [];
 const seenFindings = new Set();
 function report(level, file, line, code, message) {
-  const key = `${file}\u0000${line}\u0000${code}\u0000${message}`;
-  if (seenFindings.has(key)) return; // the same problem twice on one line is one finding
-  seenFindings.add(key);
+  const findingId = `${file}\u0000${line}\u0000${code}\u0000${message}`;
+  if (seenFindings.has(findingId)) return; // the same problem twice on one line is one finding
+  seenFindings.add(findingId);
   findings.push({ level, file, line: line || null, code, message });
 }
 const err = (f, l, c, m) => report('error', f, l, c, m);
@@ -512,8 +512,8 @@ function parseMap(lines, i, indent) {
     const l = lines[i];
     const m = l.content.match(/^('(?:[^']|'')*'|"(?:[^"\\]|\\.)*"|[^:]+?)\s*:(?:\s+(.*))?$/);
     if (!m) throw yamlError(l.no, `cannot read "${l.content}"`);
-    const key = unquote(m[1]);
-    if (Object.prototype.hasOwnProperty.call(out, key)) throw yamlError(l.no, `duplicate key "${key}"`);
+    const field = unquote(m[1]);
+    if (Object.prototype.hasOwnProperty.call(out, field)) throw yamlError(l.no, `duplicate key "${field}"`);
     const rest = (m[2] || '').trim();
     i++;
     if (rest !== '') {
@@ -523,11 +523,11 @@ function parseMap(lines, i, indent) {
         value += ' ' + lines[i].content.trim();
         i++;
       }
-      out[key] = parseScalar(value, l.no);
+      out[field] = parseScalar(value, l.no);
     }
-    else if (i < lines.length && lines[i].indent > indent) [out[key], i] = parseNode(lines, i, lines[i].indent);
-    else if (i < lines.length && lines[i].indent === indent && isSeqLine(lines[i])) [out[key], i] = parseSeq(lines, i, indent);
-    else out[key] = null;
+    else if (i < lines.length && lines[i].indent > indent) [out[field], i] = parseNode(lines, i, lines[i].indent);
+    else if (i < lines.length && lines[i].indent === indent && isSeqLine(lines[i])) [out[field], i] = parseSeq(lines, i, indent);
+    else out[field] = null;
   }
   return [out, i];
 }
@@ -788,11 +788,11 @@ if (!projectSettingsFile) {
       if (value.variables && typeof value.variables === 'object') {
         const flat = (obj, prefix) => {
           for (const [k, v] of Object.entries(obj)) {
-            const key = prefix ? `${prefix}.${k}` : k;
-            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) warn(projectSettingsFile, null, 'variable_name', `variable "${key}": a name may use only letters, digits and _ (no dashes), or %${key}% shows as plain text`);
-            if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, key);
-            else projectVars.add(key);
-            if (/(secret|token|password|passwd|api[_-]?key|private)/i.test(k)) warn(projectSettingsFile, null, 'variable_secret', `variable "${key}" looks like a secret; variables render into public docs`);
+            const varName = prefix ? `${prefix}.${k}` : k;
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k)) warn(projectSettingsFile, null, 'variable_name', `variable "${varName}": a name may use only letters, digits and _ (no dashes), or %${varName}% shows as plain text`);
+            if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, varName);
+            else projectVars.add(varName);
+            if (/(secret|token|password|passwd|api[_-]?key|private)/i.test(k)) warn(projectSettingsFile, null, 'variable_secret', `variable "${varName}" looks like a secret; variables render into public docs`);
           }
         };
         flat(value.variables, '');
@@ -807,9 +807,9 @@ if (!projectSettingsFile) {
       };
       const scan = (obj, prefix) => {
         for (const [k, v] of Object.entries(obj)) {
-          const key = prefix ? `${prefix}.${k}` : k;
-          if (v && typeof v === 'object' && !Array.isArray(v)) scan(v, key);
-          else if ((typeof v === 'number' || typeof v === 'boolean') && !writtenAsShown(k, v)) warn(projectSettingsFile, null, 'variable_not_text', `variables.${key} is not text to YAML (it reads as ${v}), so %${key}% shows ${v}: quote the value`);
+          const varName = prefix ? `${prefix}.${k}` : k;
+          if (v && typeof v === 'object' && !Array.isArray(v)) scan(v, varName);
+          else if ((typeof v === 'number' || typeof v === 'boolean') && !writtenAsShown(k, v)) warn(projectSettingsFile, null, 'variable_not_text', `variables.${varName} is not text to YAML (it reads as ${v}), so %${varName}% shows ${v}: quote the value`);
         }
       };
       scan(value.variables, '');
@@ -911,15 +911,15 @@ for (const [v, ve] of versions) {
   }
 }
 
-function checkOrderList(file, list, actual, key) {
+function checkOrderList(file, list, actual, listName) {
   if (list === undefined || list === null) {
-    if (actual.length > 1) warn(file, null, 'order_missing', `no ${key}: list, so their order is not set`);
+    if (actual.length > 1) warn(file, null, 'order_missing', `no ${listName}: list, so their order is not set`);
     return;
   }
-  if (!Array.isArray(list)) { err(file, null, 'order_shape', `${key} must be a list of slugs`); return; }
+  if (!Array.isArray(list)) { err(file, null, 'order_shape', `${listName} must be a list of slugs`); return; }
   const set = new Set(list.map(String));
-  for (const s of set) if (!actual.includes(s)) warn(file, null, 'order_unknown', `${key} lists "${s}", which has no folder with content here`);
-  for (const a of actual) if (!set.has(a)) warn(file, null, 'order_unlisted', `${key} does not list "${a}"; it is appended at the end`);
+  for (const s of set) if (!actual.includes(s)) warn(file, null, 'order_unknown', `${listName} lists "${s}", which has no folder with content here`);
+  for (const a of actual) if (!set.has(a)) warn(file, null, 'order_unlisted', `${listName} does not list "${a}"; it is appended at the end`);
 }
 
 function checkSpec(rel) {
@@ -1128,17 +1128,17 @@ function checkPageFrontmatter(rel) {
     if (!l.trim()) return;
     const m = l.match(/^([A-Za-z_][\w-]*):(.*)$/);
     if (!m) { warn(rel, no, 'frontmatter_line', `cannot read "${l}" (page frontmatter is one key: value per line)`); return; }
-    const key = m[1], val = m[2].trim();
-    keys.set(key, { val, no });
-    if (key === 'slug') warn(rel, no, 'frontmatter_slug', 'slug: is ignored in a synced repo (the filename is the slug): remove it');
-    else if (!PAGE_KEYS.has(key)) warn(rel, no, 'frontmatter_key', `"${key}" is not a page frontmatter key, so it is ignored`);
-    if (/^'.*'$/.test(val) && val.length >= 2) err(rel, no, 'frontmatter_quoted', `${key}: page frontmatter is not YAML, so single quotes become part of the value; write it bare`);
-    else if (/^"[^"]*"$/.test(val) && val.length >= 2) note(rel, no, 'frontmatter_double_quoted', `${key}: the double quotes are dropped on import and the value is written back bare`);
-    else if (/^"|"$/.test(val) && PAGE_KEYS.has(key)) err(rel, no, 'frontmatter_edge_quote', `${key}: every " at the start and end of a value is stripped on import (${val} becomes ${val.replace(/^"+|"+$/g, '')}); reword it so it does not start or end with a quote`);
-    if ((key === 'listed' || key === 'hidden') && !/^(true|false)?$/.test(val)) warn(rel, no, 'frontmatter_bool', `${key} must be true or false; anything but true, yes or 1 reads as false`);
-    if (key === 'listed' && val === '') warn(rel, no, 'frontmatter_listed_empty', 'an empty listed: reads as false, which hides the page from the sidebar: write listed: true');
-    if (key === 'hidden' && val === '') note(rel, no, 'frontmatter_bool_empty', 'hidden: is empty; DeveloperHub writes it back as false');
-    if (/^\s*[\[{]/.test(val) || /^\s*-\s/.test(val)) warn(rel, no, 'frontmatter_list', `${key}: lists are not read here; write comma-separated values`);
+    const field = m[1], val = m[2].trim();
+    keys.set(field, { val, no });
+    if (field === 'slug') warn(rel, no, 'frontmatter_slug', 'slug: is ignored in a synced repo (the filename is the slug): remove it');
+    else if (!PAGE_KEYS.has(field)) warn(rel, no, 'frontmatter_key', `"${field}" is not a page frontmatter key, so it is ignored`);
+    if (/^'.*'$/.test(val) && val.length >= 2) err(rel, no, 'frontmatter_quoted', `${field}: page frontmatter is not YAML, so single quotes become part of the value; write it bare`);
+    else if (/^"[^"]*"$/.test(val) && val.length >= 2) note(rel, no, 'frontmatter_double_quoted', `${field}: the double quotes are dropped on import and the value is written back bare`);
+    else if (/^"|"$/.test(val) && PAGE_KEYS.has(field)) err(rel, no, 'frontmatter_edge_quote', `${field}: every " at the start and end of a value is stripped on import (${val} becomes ${val.replace(/^"+|"+$/g, '')}); reword it so it does not start or end with a quote`);
+    if ((field === 'listed' || field === 'hidden') && !/^(true|false)?$/.test(val)) warn(rel, no, 'frontmatter_bool', `${field} must be true or false; anything but true, yes or 1 reads as false`);
+    if (field === 'listed' && val === '') warn(rel, no, 'frontmatter_listed_empty', 'an empty listed: reads as false, which hides the page from the sidebar: write listed: true');
+    if (field === 'hidden' && val === '') note(rel, no, 'frontmatter_bool_empty', 'hidden: is empty; DeveloperHub writes it back as false');
+    if (/^\s*[\[{]/.test(val) || /^\s*-\s/.test(val)) warn(rel, no, 'frontmatter_list', `${field}: lists are not read here; write comma-separated values`);
   });
   if (!keys.has('title') || !keys.get('title').val) err(rel, 2, 'frontmatter_title', 'the page has no title');
   if (keys.has('type') && keys.get('type').val !== 'page') warn(rel, keys.get('type').no, 'frontmatter_type', `type: ${keys.get('type').val}: a page file is type: page; another type can change its sidebar entry`);

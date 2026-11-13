@@ -1,7 +1,7 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.8"
+  version: "1.9"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
@@ -219,7 +219,7 @@ key does nothing.
 
 In the repo, reference an image by **relative path**, not an `asset:` token:
 `![alt](./logo.png)`, `{% image url="../assets/abc123.png" /%}`, or `{% inline-image
-url="./icon.png" /%}`. Commit an image next to its page and it is used in place;
+url="./badge.png" /%}`. Commit an image next to its page and it is used in place;
 otherwise the sync stores it content-addressed under top-level `assets/`. External
 URLs and data URIs are left as written. Non-image files are never uploaded.
 

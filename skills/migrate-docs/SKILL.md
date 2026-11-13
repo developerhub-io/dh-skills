@@ -1,7 +1,7 @@
 ---
 name: migrate-docs
 metadata:
-  version: "1.0"
+  version: "1.1"
 description: >-
   Migrate existing documentation into a folder DeveloperHub can import: every
   page converted to DeveloperHub Markdoc, the navigation rebuilt as versions,
@@ -177,7 +177,7 @@ Map the source onto DeveloperHub's model:
 | **API reference** | `{version}/refs/{slug}.yaml` | an OpenAPI spec |
 | **Changelog** | `changelogs/{path}/` | blog, release notes, changelog page |
 | **Synced block** | `_synced-blocks/{id}.md` | a partial or snippet reused on several pages |
-| **Variables** | `developerhub.yaml` → `%KEY%` | substitutions and static template variables |
+| **Variables** | `developerhub.yaml` → `%name%` | substitutions and static template variables |
 
 Then work out which choices the source does not settle and **ask them together, in
 one round**, before converting anything. For each question give what you found

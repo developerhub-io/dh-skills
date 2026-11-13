@@ -577,7 +577,7 @@ both directions:
 
 - Markdown: `![alt](./logo.png)`
 - Block tag: `{% image url="../assets/a1b2c3d4e5f6.png" /%}`
-- Inline tag: `{% inline-image url="./icon.png" /%}`
+- Inline tag: `{% inline-image url="./badge.png" /%}`
 
 Where the bytes live:
 

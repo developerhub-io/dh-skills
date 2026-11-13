@@ -543,5 +543,5 @@ Variables are written in **percent form**, not as a tag:
 - `callout`, `conditional` → any block (they can nest tabs, callouts, etc.).
 - `image` body → caption (inline content only).
 - `video`, `cards`, `github-code`, `index-list`, `synced`, `html` → no children.
-- Inline tags (`badge`, `glossary`, `icon`, `key`, `inline-image`) and `%KEY%`
+- Inline tags (`badge`, `glossary`, `icon`, `key`, `inline-image`) and `%name%`
   variables live inside a line of text.
