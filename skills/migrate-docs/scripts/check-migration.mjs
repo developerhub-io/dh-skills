@@ -778,10 +778,10 @@ if (!projectSettingsFile) {
       for (const k of Object.keys(value)) if (!PROJECT_KEYS.has(k)) warn(projectSettingsFile, null, 'settings_keys_ignored', `"${k}" is not read from developerhub.yaml`);
       const SETTINGS_KEYS = ['uiVersion', 'darkMode', 'lightCodeTheme', 'showThemeToggle', 'stickyTopnav', 'transparentTopnav', 'fullWidthFooter', 'mainColour', 'linkColour', 'navLinkColour', 'inlineCodeColour', 'fontFamily'];
       const NAVIGATION_KEYS = ['openLinksNewTab', 'logoUrl', 'links', 'groups'];
-      for (const [block, keys] of [['settings', SETTINGS_KEYS], ['navigation', NAVIGATION_KEYS]]) {
+      for (const [block, allowed] of [['settings', SETTINGS_KEYS], ['navigation', NAVIGATION_KEYS]]) {
         if (value[block] === undefined || value[block] === null) continue;
         if (typeof value[block] !== 'object' || Array.isArray(value[block])) { warn(projectSettingsFile, null, 'settings_block', `${block}: must be a mapping, so it is ignored`); continue; }
-        for (const k of Object.keys(value[block])) if (!keys.includes(k)) warn(projectSettingsFile, null, 'settings_keys_ignored', `"${block}.${k}" is not read`);
+        for (const k of Object.keys(value[block])) if (!allowed.includes(k)) warn(projectSettingsFile, null, 'settings_keys_ignored', `"${block}.${k}" is not read`);
       }
       checkThemeSettings(projectSettingsFile, value.settings);
       projectNavigation = value.navigation && typeof value.navigation === 'object' && !Array.isArray(value.navigation) ? value.navigation : null;
@@ -1122,14 +1122,14 @@ function checkPageFrontmatter(rel) {
   if (!pg.frontmatter) { err(rel, 1, 'frontmatter_missing', 'no frontmatter block: a page starts with --- , its fixed keys, and ---'); return; }
   const fm = pg.frontmatter;
   if (fm.close > FRONTMATTER_MAX_LINES - 1) { err(rel, fm.close + 1, 'frontmatter_too_long', `the closing --- is on line ${fm.close + 1}; it must be within the first ${FRONTMATTER_MAX_LINES} lines, or the whole file, frontmatter included, becomes the page body`); return; }
-  const keys = new Map();
+  const fields = new Map();
   fm.lines.forEach((l, i) => {
     const no = i + 2;
     if (!l.trim()) return;
     const m = l.match(/^([A-Za-z_][\w-]*):(.*)$/);
     if (!m) { warn(rel, no, 'frontmatter_line', `cannot read "${l}" (page frontmatter is one key: value per line)`); return; }
     const field = m[1], val = m[2].trim();
-    keys.set(field, { val, no });
+    fields.set(field, { val, no });
     if (field === 'slug') warn(rel, no, 'frontmatter_slug', 'slug: is ignored in a synced repo (the filename is the slug): remove it');
     else if (!PAGE_KEYS.has(field)) warn(rel, no, 'frontmatter_key', `"${field}" is not a page frontmatter key, so it is ignored`);
     if (/^'.*'$/.test(val) && val.length >= 2) err(rel, no, 'frontmatter_quoted', `${field}: page frontmatter is not YAML, so single quotes become part of the value; write it bare`);
@@ -1140,10 +1140,10 @@ function checkPageFrontmatter(rel) {
     if (field === 'hidden' && val === '') note(rel, no, 'frontmatter_bool_empty', 'hidden: is empty; DeveloperHub writes it back as false');
     if (/^\s*[\[{]/.test(val) || /^\s*-\s/.test(val)) warn(rel, no, 'frontmatter_list', `${field}: lists are not read here; write comma-separated values`);
   });
-  if (!keys.has('title') || !keys.get('title').val) err(rel, 2, 'frontmatter_title', 'the page has no title');
-  if (keys.has('type') && keys.get('type').val !== 'page') warn(rel, keys.get('type').no, 'frontmatter_type', `type: ${keys.get('type').val}: a page file is type: page; another type can change its sidebar entry`);
-  if (!keys.has('type')) note(rel, 2, 'frontmatter_type_missing', 'type: page is missing; the sync writes it back');
-  if (keys.has('audience') && keys.get('audience').val) note(rel, keys.get('audience').no, 'audience', `gated to audience "${keys.get('audience').val}": it must exist in the project, or no reader sees the page`);
+  if (!fields.has('title') || !fields.get('title').val) err(rel, 2, 'frontmatter_title', 'the page has no title');
+  if (fields.has('type') && fields.get('type').val !== 'page') warn(rel, fields.get('type').no, 'frontmatter_type', `type: ${fields.get('type').val}: a page file is type: page; another type can change its sidebar entry`);
+  if (!fields.has('type')) note(rel, 2, 'frontmatter_type_missing', 'type: page is missing; the sync writes it back');
+  if (fields.has('audience') && fields.get('audience').val) note(rel, fields.get('audience').no, 'audience', `gated to audience "${fields.get('audience').val}": it must exist in the project, or no reader sees the page`);
 }
 
 function checkPostFrontmatter(rel) {

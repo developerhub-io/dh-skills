@@ -1,7 +1,7 @@
 ---
 name: migrate-docs
 metadata:
-  version: "1.1"
+  version: "1.2"
 description: >-
   Migrate existing documentation into a folder DeveloperHub can import: every
   page converted to DeveloperHub Markdoc, the navigation rebuilt as versions,
