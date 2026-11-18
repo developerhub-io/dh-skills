@@ -1,7 +1,7 @@
 ---
 name: migrate-docs
 metadata:
-  version: "1.2"
+  version: "1.3"
 description: >-
   Migrate existing documentation into a folder DeveloperHub can import: every
   page converted to DeveloperHub Markdoc, the navigation rebuilt as versions,
@@ -61,8 +61,8 @@ Detailed references, read when the step needs them:
   traps that silently lose content.
 - [`references/crawling.md`](references/crawling.md): the fallback when the only
   source is the published site.
-- [`scripts/check-migration.mjs`](scripts/check-migration.mjs): the validator. Run
-  it before you hand anything over.
+- The validator, `check-migration`: run it before you hand anything over. How to run
+  it, and what to do when it can't run, is in [Validate](#8-validate).
 
 ## Ground rules
 
@@ -412,13 +412,30 @@ map, and the conversion rules, and validate their output centrally.
 
 ## 8. Validate
 
-Run the validator on the output and fix every error:
+Run the validator on the output and fix every error. It is a Node script with no
+dependencies (Node 18 or newer), published in the `@developerhub/dh-skills` npm
+package:
 
 ```bash
-node <this-skill>/scripts/check-migration.mjs <output> --old-host docs.example.com
+npx -y -p @developerhub/dh-skills@1.8.0 check-migration <output> --old-host docs.example.com
 ```
 
-It checks the layout (depths, slugs, parent pages, reserved names), settings and
+If this skill's folder has `scripts/check-migration.mjs` (installed from npm, or a
+copied folder), run that copy instead, with the same arguments:
+`node <this-skill>/scripts/check-migration.mjs <output> --old-host docs.example.com`.
+It is the same script and needs no download.
+
+If `node --version` fails, or the download fails (no network, or a sandbox that
+blocks the npm registry), do not install Node or change the customer's machine
+without asking. Tell the customer the validator could not run and why, then check
+the output by hand: every page is listed once in its `_nav.yaml` and every entry
+there points at a real file; page frontmatter uses only the keys
+[`write-markdoc`](../write-markdoc/SKILL.md) lists; no source syntax is left (MDX
+components, `:::`, `!!!`, shortcodes, raw HTML that would show as text); every image
+exists and is under 10 MB; every relative link and anchor resolves. Say in
+`MIGRATION.md` that the folder was checked by hand, not by the validator.
+
+The validator checks the layout (depths, slugs, parent pages, reserved names), settings and
 `_nav.yaml` (every page listed once, entries that point at real files, icon names),
 page frontmatter, the body dialect (unknown tags, unclosed tags, block tags on their
 own lines, quoted booleans), leftover source syntax (MDX components, `:::`, `!!!`,

@@ -1,8 +1,8 @@
 {
   "name": "dh-skills",
   "displayName": "DeveloperHub",
-  "description": "Agent Skills for DeveloperHub: the exact Markdoc syntax for every content block, the file layout of a Git-synced docs repo, and migrating existing docs to DeveloperHub.",
-  "version": "1.7.4",
+  "description": "Connects Claude to your DeveloperHub docs through the Editor MCP server, and adds skills for the exact DeveloperHub Markdoc syntax, the layout of a Git-synced docs repo, and migrating existing docs to DeveloperHub.",
+  "version": "1.8.0",
   "author": {
     "name": "DeveloperHub",
     "email": "hello@developerhub.io",
@@ -14,6 +14,12 @@
   "privacyPolicyUrl": "https://developerhub.io/privacy",
   "termsOfServiceUrl": "https://developerhub.io/terms",
   "license": "MIT",
+  "mcpServers": {
+    "developerhub": {
+      "type": "http",
+      "url": "https://ai.developerhub.io/mcp"
+    }
+  },
   "keywords": [
     "developerhub",
     "markdoc",

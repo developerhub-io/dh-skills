@@ -11,6 +11,11 @@ wrong shape and the edit churns on the first save or silently drops content. The
 skills give the agent that ground truth: the Markdoc syntax inside a page, and the
 repository layout around it (folders, navigation, settings, assets, and refs).
 
+As a Claude Code plugin, it also connects Claude to the
+[DeveloperHub Editor MCP server](https://docs.developerhub.io/support-center/editor-mcp-server),
+so Claude can find, write, publish and check pages in your DeveloperHub projects
+directly.
+
 ## What's inside
 
 | Skill | Teaches |
@@ -31,9 +36,9 @@ carries [`source-platforms.md`](skills/migrate-docs/references/source-platforms.
 [`conversion-rules.md`](skills/migrate-docs/references/conversion-rules.md) (construct by
 construct, including what silently loses content),
 [`crawling.md`](skills/migrate-docs/references/crawling.md) (when the only source is the
-published site), and
-[`check-migration.mjs`](skills/migrate-docs/scripts/check-migration.mjs), a zero-dependency
-validator for the folder it produces (`node check-migration.mjs <folder>`, Node 18+).
+published site), and `check-migration`, a validator with no dependencies for the folder
+it produces. The validator ships in the npm package, and the skill runs it with
+`npx -y -p @developerhub/dh-skills@<version> check-migration <folder>` (Node 18+).
 
 ## Install
 
@@ -48,7 +53,10 @@ itself current as the DeveloperHub format changes:
 ```
 
 The skills arrive namespaced, as `dh-skills:write-markdoc`,
-`dh-skills:organize-docs-repo` and `dh-skills:migrate-docs`. To pick up new releases
+`dh-skills:organize-docs-repo` and `dh-skills:migrate-docs`, together with the
+DeveloperHub Editor MCP server. The first time Claude uses the server, it asks you to
+sign in to DeveloperHub and approve access. A project admin turns the server on per
+project, in Project Settings → **AI** → **AI Agents & MCP** → **Editor**. To pick up new releases
 without reinstalling, enable
 auto-update once: run `/plugin`, open the **Marketplaces** tab, select
 **developerhub**, and choose **Enable auto-update**. Claude Code then refreshes the
@@ -75,13 +83,19 @@ vendor the files as a dependency (`npm install @developerhub/dh-skills`).
 
 ## What the plugin runs and sends
 
-The skills are instructions and reference files. Installing the plugin adds no hooks,
-no MCP servers and no background processes, and the plugin itself sends nothing
-anywhere.
+The skills are instructions and reference files. The plugin adds no hooks and no
+background processes.
 
-- `check-migration.mjs` runs on your machine only when the agent validates a migrated
-  folder. It reads the folder you pass it, prints a report, writes no files and makes
-  no network requests.
+- The plugin adds one MCP server, the DeveloperHub Editor MCP server at
+  `https://ai.developerhub.io/mcp`. It does nothing until you sign in to DeveloperHub
+  and approve access. After that, Claude reads and changes the docs in your projects
+  through it, with your account's role in each project, so the content Claude works
+  on passes between DeveloperHub and Claude. See the
+  [DeveloperHub privacy policy](https://developerhub.io/privacy).
+- The migration validator runs only when the agent validates a migrated folder.
+  `npx` downloads it from the npm registry as `@developerhub/dh-skills` at a fixed
+  version, unless a copy is already in the skill's folder. It reads the folder you
+  pass it, prints a report, writes no files and makes no network requests itself.
 - `migrate-docs` reads the docs you point it at: a local folder, a Git repository it
   clones with `git clone`, or an export archive. When the only source is a published
   docs site, it first asks whether a repository or export exists, and only then fetches
