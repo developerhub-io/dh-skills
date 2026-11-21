@@ -2,7 +2,7 @@
   "name": "dh-skills",
   "displayName": "DeveloperHub",
   "description": "Connects Claude to your DeveloperHub docs through the Editor MCP server, and adds skills for the exact DeveloperHub Markdoc syntax, the layout of a Git-synced docs repo, and migrating existing docs to DeveloperHub.",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "author": {
     "name": "DeveloperHub",
     "email": "hello@developerhub.io",

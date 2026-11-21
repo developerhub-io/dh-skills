@@ -1,7 +1,7 @@
 ---
 name: organize-docs-repo
 metadata:
-  version: "1.9"
+  version: "1.10"
 description: >-
   Understand and produce the file and folder layout of a DeveloperHub Git-synced
   documentation repository. Use whenever a task involves where a page file goes;
@@ -83,13 +83,17 @@ README.md   .gitignore         # IGNORED: not ours, left untouched
    Folders alone are an unordered set.
 5. **`developerhub.yaml` is the only managed file at the repo root.** Everything
    else at the root is yours and is ignored.
-6. **Folders become real through content, and arrive unpublished.** A
-   documentation exists once it holds a page; a version needs a page or a ref
-   spec (settings for an empty folder just warn). A repo-created version,
-   documentation, reference or changelog stays unpublished until its settings file
-   says `published: true`, and a post until its frontmatter does. (A changelog is the
-   exception to the content rule: it exists on its `_settings.yaml` alone, so an
-   empty changelog is representable.)
+6. **A folder exists through its settings file or its content, and arrives
+   unpublished.** A documentation exists once it holds its `_settings.yaml`, its
+   `_nav.yaml` or a page; a version once it holds its `_settings.yaml`, a
+   documentation, a page or a ref spec; a changelog once it holds its
+   `_settings.yaml` or a post. So an empty documentation, version or changelog is
+   representable, and deleting a documentation's last page leaves it in place,
+   empty: delete the folder to delete it. Only the `_`-prefixed names count here:
+   a folder holding just a legacy `settings.yaml` or `nav.yaml` does not exist, so
+   rename those before emptying one. A repo-created version, documentation,
+   reference or changelog stays unpublished until its settings file says
+   `published: true`, and a post until its frontmatter does.
 7. **`changelogs/` at the repo root is reserved.** It holds changelogs, which are
    project-level and sit outside the version tree, so a version can never be named
    `changelogs` (DeveloperHub refuses the name).
@@ -369,8 +373,9 @@ broken). Fragments (`#section`) are preserved.
 | Move a page AND rewrite it | Two commits: the move first, the content edit second (one commit can defeat move pairing, turning it into delete + create). |
 | Delete a page | Delete the `.md` and its `_nav.yaml` entry. Deletes are soft for 30 days; re-adding the same path revives the same page. |
 | Un-gate an audience page | Set `audience:` to empty in its frontmatter (deleting the line changes nothing). |
-| Add a version | Create `{version}/` with a `_settings.yaml` plus at least one page or ref spec; it stays unpublished until `published: true`. |
-| Add a documentation | Create `{version}/{doc}/` with `_settings.yaml` (with `published: true`, or it stays unpublished), `_nav.yaml`, and its first page (an empty folder does not sync); list it in the version's `documentations:`. |
+| Add a version | Create `{version}/` with a `_settings.yaml` (that alone is enough; its documentations can come later); it stays unpublished until `published: true`. |
+| Add a documentation | Create `{version}/{doc}/` with `_settings.yaml` (with `published: true`, or it stays unpublished) and `_nav.yaml` (enough for an empty one; its pages can come later); list it in the version's `documentations:`. |
+| Delete a documentation or version | Delete its whole folder (for a documentation, also drop it from the version's `documentations:`). Deletes are soft for 30 days; restoring the folder brings it back. Deleting only its pages leaves it in place, empty. |
 | Add an image | Commit it next to the page (or anywhere) and reference it by relative path. |
 | Add an API reference | Commit the spec at `{version}/refs/{slug}.{yaml\|json}` and a `{slug}.settings.yaml`; list `{slug}` in the version's `references:`. |
 | Add a changelog | Create `changelogs/{path}/_settings.yaml` (that alone is enough; posts can come later). |

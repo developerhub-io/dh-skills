@@ -210,9 +210,10 @@ version level (folders alone are an unordered set, so order lives here). A key
 other than these four is ignored with a `settings_keys_ignored` warning. `slug` is
 never written here (the folder owns it).
 
-A version comes into existence only once it holds at least one page or ref spec
-(the settings file alone creates nothing), and a repo-created version stays
-**unpublished** until this file says `published: true`. Text values apply only
+A version exists once its folder holds this file, a documentation, a page or a ref
+spec, so this file alone makes a version with nothing in it yet. A repo-created
+version stays **unpublished** until this file says `published: true`. Deleting the
+whole folder deletes the version. Text values apply only
 when non-empty: an empty `name:` is ignored, so a text setting cannot be cleared
 from the file.
 
@@ -248,9 +249,10 @@ locale: en_us
 `slug` is never written (the folder owns it). Page **order and grouping** are not
 here: they live in `_nav.yaml`.
 
-A documentation exists only once it holds at least one page; a bare folder with
-just `_settings.yaml` does not sync (its settings surface as warnings until a
-page arrives). As at the version level, empty text values (`title:`,
+A documentation exists once its folder holds this file, its `_nav.yaml` or a page,
+so this file alone makes a documentation with no pages yet (readers see it as an
+empty section). Deleting its last page leaves it in place, empty; to delete the
+documentation, delete its folder. As at the version level, empty text values (`title:`,
 `description:`) are ignored, not applied.
 
 ## Pages
@@ -679,7 +681,7 @@ changelogs/
   be unique within its changelog.
 - **Images** anywhere under `changelogs/` follow the ordinary asset rules; any other
   non-image file is ignored.
-- **A changelog exists on its `_settings.yaml` alone.** Unlike a version or a
+- **A changelog exists on its `_settings.yaml` alone.** As with a version or a
   documentation, it needs no content: an empty changelog is representable (Git
   cannot store an empty folder, so the settings file is what makes it exist).
 - **Deleting the folder deletes the changelog**; deleting a post's `.md` soft-deletes
@@ -886,7 +888,7 @@ Non-blocking findings (warning / notice):
 | `nav_duplicate_entry` | A page is listed more than once. |
 | `nav_icon_invalid` | An entry's `icon:` is neither a FontAwesome solid name nor an `http(s)` image URL; the icon is ignored and the entry keeps no icon. |
 | `settings_key_ignored` | An unrecognised or app-owned settings key; it will not apply. |
-| `version_deleted` / `documentation_deleted` | The PR empties a whole version or documentation: a confirmation, not an error. |
+| `version_deleted` / `documentation_deleted` | The PR removes a whole version or documentation folder (removing only its pages while its `_settings.yaml` stays leaves it in place, empty, and is not reported): a confirmation, not an error. |
 | `changelog_date_missing` | A changelog post has no `date:`; a new post would be dated when it syncs rather than when it was written. |
 | `changelog_key_ignored` | A frontmatter key a post does not own (the slug comes from the filename); it will not apply. |
 | `changelog_deleted` | The PR removes a whole changelog and its posts: a confirmation, not an error. |
@@ -914,7 +916,11 @@ settings file is ignored.
 
 Older repositories (created before the `_`-prefixed names) used `settings.yaml` and
 `nav.yaml` without the underscore. Those are still **read** correctly on the way in,
-so an un-migrated repo keeps working. The writer only ever emits the current
+so an un-migrated repo keeps working. One difference: only the current names make a
+folder exist on their own. A version or documentation folder holding just a legacy
+`settings.yaml` or `nav.yaml` and no content does not exist, so in such a repo
+deleting a documentation's last page deletes the documentation; rename its files to
+`_settings.yaml` / `_nav.yaml` first. The writer only ever emits the current
 `_settings.yaml` / `_nav.yaml` names; the next full sync adds the new file and the
 old one is swept. The reference sidecar suffix (`{slug}.settings.yaml`) has no
 underscore by design: it sorts next to its spec file.

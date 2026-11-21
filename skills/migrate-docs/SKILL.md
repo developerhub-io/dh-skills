@@ -1,7 +1,7 @@
 ---
 name: migrate-docs
 metadata:
-  version: "1.3"
+  version: "1.4"
 description: >-
   Migrate existing documentation into a folder DeveloperHub can import: every
   page converted to DeveloperHub Markdoc, the navigation rebuilt as versions,
@@ -417,7 +417,7 @@ dependencies (Node 18 or newer), published in the `@developerhub/dh-skills` npm
 package:
 
 ```bash
-npx -y -p @developerhub/dh-skills@1.8.0 check-migration <output> --old-host docs.example.com
+npx -y -p @developerhub/dh-skills@1.8.1 check-migration <output> --old-host docs.example.com
 ```
 
 If this skill's folder has `scripts/check-migration.mjs` (installed from npm, or a
